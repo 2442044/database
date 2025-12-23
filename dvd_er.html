@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVDレンタルシステム ER図 (改善版)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        .description {
+            margin-top: 40px;
+        }
+        h2 { margin-top: 30px; color: #34495e; }
+        h3 { color: #2980b9; margin-bottom: 5px; }
+        p { margin-top: 0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DVDレンタルシステム ER図 (Standard Edition)</h1>
+        
+        <div class="mermaid">
+            erDiagram
+                %% 会員とレンタルの関係
+                USERS ||--o{ RENTALS : "borrows"
+                USERS ||--o{ RESERVATIONS : "reserves"
+                
+                %% 作品情報と物理ディスクの関係 (重要)
+                TITLES ||--o{ DVD_COPIES : "has inventory"
+                
+                %% 物理ディスクとレンタルの関係
+                DVD_COPIES ||--o{ RENTALS : "is rented item"
+                
+                %% 予約は作品に対して行う (どのコピーでもいいから)
+                TITLES ||--o{ RESERVATIONS : "is targeted"
+
+                %% 支払い関係
+                RENTALS ||--o{ PAYMENTS : "generates"
+
+                USERS {
+                    int user_id PK "会員ID"
+                    string name "氏名"
+                    string email "メールアドレス"
+                    string phone_number "電話番号"
+                    date birth_date "生年月日"
+                    boolean is_active "有効会員フラグ"
+                    datetime created_at "登録日時"
+                }
+
+                TITLES {
+                    int title_id PK "作品ID"
+                    string title_name "タイトル名"
+                    string genre "ジャンル"
+                    int runtime_minutes "再生時間(分)"
+                    date release_date "発売日"
+                    decimal standard_price "基本レンタル料金"
+                }
+
+                DVD_COPIES {
+                    int copy_id PK "物理ディスクID/バーコード"
+                    int title_id FK "作品ID"
+                    string status "状態(在庫あり/貸出中/紛失/破損)"
+                    string shelf_location "棚番号"
+                    date purchase_date "入荷日"
+                }
+
+                RENTALS {
+                    int rental_id PK "レンタルID"
+                    int user_id FK "会員ID"
+                    int copy_id FK "物理ディスクID"
+                    datetime rental_date "貸出日時"
+                    datetime due_date "返却予定日時"
+                    datetime actual_return_date "実返却日時"
+                    int staff_id FK "担当スタッフID"
+                }
+
+                PAYMENTS {
+                    int payment_id PK "支払ID"
+                    int rental_id FK "レンタルID"
+                    decimal amount "支払金額"
+                    string type "種別(レンタル料/延滞金/弁償)"
+                    datetime payment_date "支払日時"
+                }
+
+                RESERVATIONS {
+                    int reservation_id PK "予約ID"
+                    int user_id FK "会員ID"
+                    int title_id FK "作品ID"
+                    datetime reserved_at "予約受付日時"
+                    datetime expires_at "有効期限"
+                    string status "状態(待機中/確保済み/完了/取消)"
+                }
+
+                STAFF_USERS {
+                    int staff_id PK "スタッフID"
+                    string username "ログインID"
+                    string password_hash "パスワード"
+                    string role "権限(店長/アルバイト)"
+                }
+        </div>
+
+        <div class="description">
+            <h2>設計の変更点・意図</h2>
+            
+            <h3>1. TITLES（作品情報）と DVD_COPIES（物理在庫）の分離</h3>
+            <p>
+                以前の設計では商品と在庫が1つのテーブルでしたが、現実には「ハリーポッター」という1つの作品に対して、
+                店舗には「ディスクA」「ディスクB」「ディスクC」と複数の物理メディアが存在します。<br>
+                レンタル貸出時は「どの作品か」ではなく<strong>「どの物理ディスク(バーコード)か」</strong>を管理する必要があるため、テーブルを分けました。
+            </p>
+            
+            <h3>2. 予約 (RESERVATIONS) の紐付け先</h3>
+            <p>
+                レンタルは物理ディスク(DVD_COPIES)に紐づきますが、予約は通常「作品(TITLES)」に対して行います。
+                （「ハリーポッター」が見られれば、物理ディスクAでもBでも良いため）。
+            </p>
+
+            <h3>3. 期限管理の明確化</h3>
+            <p>
+                <code>RENTALS</code> テーブルに <code>due_date</code>（返却予定日）と <code>actual_return_date</code>（実際に返した日）を分けました。
+                これにより、延滞金の計算ロジックが組みやすくなります。
+            </p>
+
+            <h3>4. PAYMENTS（支払い）の追加</h3>
+            <p>
+                レンタル時の支払いや、返却時の延滞料金を管理するためのテーブルを追加しました。
+            </p>
+        </div>
+    </div>
+</body>
+</html>
