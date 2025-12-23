@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVDレンタルシステム 高度データベース設計書</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        h1 { color: #1a73e8; border-bottom: 3px solid #1a73e8; padding-bottom: 10px; text-align: center; }
+        h2 { color: #1e88e5; border-left: 5px solid #1e88e5; padding-left: 10px; margin-top: 40px; }
+        h3 { color: #0d47a1; background: #e3f2fd; padding: 8px 15px; border-radius: 5px; }
+        .mermaid { background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; overflow-x: auto; }
+        pre { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.9em; }
+        code { font-family: 'Consolas', 'Monaco', monospace; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
+        .pk { background: #ffecb3; color: #ff8f00; border: 1px solid #ff8f00; }
+        .fk { background: #e1f5fe; color: #0288d1; border: 1px solid #0288d1; }
+        .not-null { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f5f5f5; }
+        .step { background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>DVDレンタルシステム 高度データベース設計書</h1>
+
+    <h2>1. ER図 (主キー・外部キー・制約明示)</h2>
+    <p>正規化を行い、データの重複と矛盾を排除した設計です。</p>
+    <div class="mermaid">
+    erDiagram
+        USERS ||--o{ RENTALS : "borrows"
+        USERS ||--o{ RESERVATIONS : "reserves"
+        GENRES ||--o{ DVDS : "categorizes"
+        DVDS ||--o{ RENTALS : "is rented"
+        DVDS ||--o{ RESERVATIONS : "is reserved"
+
+        USERS {
+            int user_id PK "会員ID (NOT NULL)"
+            string name "氏名 (NOT NULL)"
+            string address "住所 (NOT NULL)"
+            string phone "電話番号 (UNIQUE, NOT NULL)"
+            date birth_date "生年月日"
+            datetime created_at "登録日"
+        }
+
+        GENRES {
+            int genre_id PK "ジャンルID"
+            string name "ジャンル名 (NOT NULL)"
+        }
+
+        DVDS {
+            int dvd_id PK "商品ID (NOT NULL)"
+            string title "タイトル (NOT NULL)"
+            int genre_id FK "ジャンルID"
+            date release_date "発売日"
+            int stock_count "在庫数 (CHECK >= 0)"
+            string storage_location "保管場所"
+        }
+
+        RENTALS {
+            int rental_id PK "レンタルID"
+            int user_id FK "会員ID (NOT NULL)"
+            int dvd_id FK "商品ID (NOT NULL)"
+            datetime rental_date "貸出日時 (NOT NULL)"
+            datetime return_date "返却日時 (NULL可)"
+            string status "貸出状況 (CHECK)"
+        }
+
+        RESERVATIONS {
+            int res_id PK "予約ID"
+            int user_id FK "会員ID"
+            int dvd_id FK "商品ID"
+            datetime res_date "予約日時"
+            string status "ステータス"
+        }
+
+        STAFF_USERS {
+            int staff_id PK "スタッフID"
+            string username "ユーザー名 (UNIQUE)"
+            string password_hash "パスワード"
+            string role "権限"
+        }
+
+        SETTINGS {
+            string key PK "設定キー"
+            decimal value "設定値"
+            string unit "単位"
+        }
+    </div>
+
+    <h2>2. 正規化の設計</h2>
+    <h3>第1正規化 (1NF)</h3>
+    <p>一つのセルに複数の値を入れない（住所の一部や複数の電話番号を分離）。</p>
+    <h3>第2正規化 (2NF)</h3>
+    <p>主キーに完全従属させる。複合主キーがある場合、部分従属を排除する。</p>
+    <h3>第3正規化 (3NF)</h3>
+    <p>主キー以外の項目間の従属関係（推移的関数従属）を排除。今回、<b>ジャンル名</b>を<code>GENRES</code>テーブルに分離しました。これにより、ジャンル名が変更されても、一箇所の修正で全DVDに反映されます。</p>
+
+    <h2>3. トランザクション処理 (ACID)</h2>
+    <p>整合性を保つための重要な処理フローです。</p>
+    
+    <div class="step">
+        <b>貸出処理のトランザクション例:</b>
+        <ol>
+            <li>START TRANSACTION</li>
+            <li><code>rentals</code>テーブルに新規レコード挿入</li>
+            <li><code>dvds</code>テーブルの<code>stock_count</code>を1減算 (UPDATE)</li>
+            <li>もし在庫が0未満になったら <b>ROLLBACK</b></li>
+            <li>COMMIT</li>
+        </ol>
+    </div>
+
+    <h2>4. SQLクエリ例 (Join/副問合せ)</h2>
+    
+    <h3>4.1 複雑なJoin (現在の貸出一覧と会員・DVD詳細)</h3>
+    <pre><code>-- 誰が何を借りているか、ジャンル名を含めて取得
+SELECT 
+    u.name AS 会員氏名,
+    d.title AS DVDタイトル,
+    g.name AS ジャンル,
+    r.rental_date AS 貸出日
+FROM rentals r
+JOIN users u ON r.user_id = u.user_id
+JOIN dvds d ON r.dvd_id = d.dvd_id
+JOIN genres g ON d.genre_id = g.genre_id
+WHERE r.return_date IS NULL;</code></pre>
+
+    <h3>4.2 副問合せ (最も借りられているDVDのタイトル)</h3>
+    <pre><code>-- レンタル回数が平均より多いDVDを取得
+SELECT title 
+FROM dvds 
+WHERE dvd_id IN (
+    SELECT dvd_id 
+    FROM rentals 
+    GROUP BY dvd_id 
+    HAVING COUNT(*) > (
+        SELECT COUNT(*) / COUNT(DISTINCT dvd_id) FROM rentals
+    )
+);</code></pre>
+
+    <h2>5. 制約事項</h2>
+    <ul>
+        <li><b>Entity Integrity:</b> 各テーブルのPKは非空かつユニーク。</li>
+        <li><b>Referential Integrity:</b> <code>rentals.user_id</code>は必ず<code>users</code>に存在しなければならない。</li>
+        <li><b>Domain Integrity:</b> <code>stock_count</code>は0以上でなければならない。</li>
+    </ul>
+</div>
+
+</body>
+</html>
