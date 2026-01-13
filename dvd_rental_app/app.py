@@ -13,6 +13,10 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+@app.route('/test')
+def test():
+    return "テストOK！"
+
 @app.route('/')
 def index():
     conn = get_db_connection()
@@ -43,6 +47,16 @@ def dvds():
     ''').fetchall()
     conn.close()
     return render_template('dvds.html', dvds=dvds)
+
+@app.route('/users')
+def users():
+    conn = get_db_connection()
+    users = conn.execute('''
+        SELECT *
+        FROM users
+    ''').fetchall()
+    conn.close()
+    return render_template('users.html', users=users)
 
 @app.route('/rent', methods=['POST'])
 def rent_dvd():
@@ -102,4 +116,5 @@ def return_dvd(rental_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
+    print(app.url_map)
     app.run(debug=True, port=5000)
