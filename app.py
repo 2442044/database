@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import datetime
+import os
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
+app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey')
 
-import os
 DATABASE = os.path.join(os.path.dirname(__file__), 'dvd_rental.db')
 
 def get_db_connection():
@@ -19,8 +19,12 @@ def index():
     # 統計情報の取得
     user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
     dvd_count = conn.execute('SELECT COUNT(*) FROM dvds').fetchone()[0]
-    rental_count = conn.execute('SELECT COUNT(*) FROM rentals WHERE return_date IS NULL').fetchone()[0]
+    active_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE return_date IS NULL').fetchone()[0]
     
+    # 本日の貸出数
+    today = datetime.date.today().strftime('%Y-%m-%d')
+    today_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE date(rental_date) = ?', (today,)).fetchone()[0]
+
     # 最近のレンタル情報
     recent_rentals = conn.execute('''
         SELECT r.*, u.name as user_name, d.title as dvd_title 
@@ -31,18 +35,76 @@ def index():
     ''').fetchall()
     
     conn.close()
-    return render_template('index.html', user_count=user_count, dvd_count=dvd_count, rental_count=rental_count, recent_rentals=recent_rentals)
+    now = datetime.datetime.now().strftime('%Y年%m月%d日 %H:%M')
+    return render_template('index.html', 
+                         user_count=user_count, 
+                         dvd_count=dvd_count, 
+                         active_rentals=active_rentals, 
+                         today_rentals=today_rentals,
+                         recent_rentals=recent_rentals,
+                         now=now)
 
 @app.route('/dvds')
 def dvds():
+    query = request.args.get('query', '')
+    genre_id = request.args.get('genre_id', '')
+    
     conn = get_db_connection()
-    dvds = conn.execute('''
+    sql = '''
         SELECT d.*, g.name as genre_name 
         FROM dvds d 
         LEFT JOIN genres g ON d.genre_id = g.genre_id
+        WHERE d.title LIKE ?
+    '''
+    params = [f'%{query}%']
+    
+    if genre_id:
+        sql += ' AND d.genre_id = ?'
+        params.append(genre_id)
+        
+    dvds = conn.execute(sql, params).fetchall()
+    genres = conn.execute('SELECT * FROM genres').fetchall()
+    conn.close()
+    return render_template('dvds.html', dvds=dvds, genres=genres, query=query, genre_id=genre_id)
+
+@app.route('/users', methods=['GET', 'POST'])
+def users():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        name = request.form['name']
+        address = request.form['address']
+        phone = request.form['phone']
+        birth_date = request.form['birth_date']
+        try:
+            conn.execute('INSERT INTO users (name, address, phone, birth_date) VALUES (?, ?, ?, ?)',
+                         (name, address, phone, birth_date))
+            conn.commit()
+            flash('ユーザーを登録しました。', 'success')
+        except Exception as e:
+            flash(f'登録エラー: {str(e)}', 'error')
+        return redirect(url_for('users'))
+
+    users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
+    conn.close()
+    return render_template('users.html', users=users)
+
+@app.route('/rental')
+def rental_page():
+    conn = get_db_connection()
+    users = conn.execute('SELECT user_id, name FROM users').fetchall()
+    # 在庫があるDVDのみ表示
+    dvds = conn.execute('SELECT dvd_id, title FROM dvds WHERE stock_count > 0').fetchall()
+    # 貸出中のもの
+    active_rentals = conn.execute('''
+        SELECT r.*, u.name as user_name, d.title as dvd_title 
+        FROM rentals r
+        JOIN users u ON r.user_id = u.user_id
+        JOIN dvds d ON r.dvd_id = d.dvd_id
+        WHERE r.return_date IS NULL
+        ORDER BY r.rental_date DESC
     ''').fetchall()
     conn.close()
-    return render_template('dvds.html', dvds=dvds)
+    return render_template('rental.html', users=users, dvds=dvds, active_rentals=active_rentals)
 
 @app.route('/rent', methods=['POST'])
 def rent_dvd():
@@ -58,6 +120,17 @@ def rent_dvd():
         dvd = conn.execute('SELECT stock_count FROM dvds WHERE dvd_id = ?', (dvd_id,)).fetchone()
         if not dvd or dvd['stock_count'] <= 0:
             flash('在庫がありません。', 'error')
+            conn.rollback()
+            return redirect(url_for('index'))
+
+        # 既にレンタル中かチェック
+        existing_rental = conn.execute('''
+            SELECT * FROM rentals 
+            WHERE user_id = ? AND dvd_id = ? AND return_date IS NULL
+        ''', (user_id, dvd_id)).fetchone()
+        
+        if existing_rental:
+            flash('このユーザーは既にこのDVDをレンタル中です。', 'error')
             conn.rollback()
             return redirect(url_for('index'))
         

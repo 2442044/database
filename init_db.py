@@ -35,7 +35,9 @@ def init_db():
         genre_id INTEGER,
         release_date DATE,
         stock_count INTEGER CHECK(stock_count >= 0),
+        total_stock INTEGER DEFAULT 1,
         storage_location TEXT,
+        description TEXT,
         FOREIGN KEY (genre_id) REFERENCES genres (genre_id)
     )
     ''')

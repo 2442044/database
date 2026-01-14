@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>貸出・返却管理</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- 貸出フォーム -->
+    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px;">
+        <h3>新規貸出</h3>
+        <form action="{{ url_for('rent_dvd') }}" method="post">
+            <div style="margin-bottom: 1rem;">
+                <label for="user_id">ユーザー</label>
+                <select id="user_id" name="user_id" required style="width: 100%; padding: 0.5rem; border-radius: 4px;">
+                    <option value="">選択してください</option>
+                    {% for user in users %}
+                    <option value="{{ user.user_id }}">{{ user.name }} (ID: {{ user.user_id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="dvd_id">DVD</label>
+                <select id="dvd_id" name="dvd_id" required style="width: 100%; padding: 0.5rem; border-radius: 4px;">
+                    <option value="">選択してください</option>
+                    {% for dvd in dvds %}
+                    <option value="{{ dvd.dvd_id }}" {% if request.args.get('dvd_id')|string == dvd.dvd_id|string %}selected{% endif %}>
+                        {{ dvd.title }} (ID: {{ dvd.dvd_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">貸出を実行</button>
+        </form>
+    </div>
+
+    <!-- 統計・クイック情報 -->
+    <div style="background: #f1f8e9; padding: 1.5rem; border-radius: 8px;">
+        <h3>ヘルプ</h3>
+        <p>1. 左のフォームからユーザーとDVDを選択して貸出を行います。</p>
+        <p>2. 下の一覧から「返却」ボタンを押すことで返却処理を行います。</p>
+        <p>3. 在庫がないDVDはリストに表示されません。</p>
+        <p><a href="{{ url_for('users') }}">新しいユーザーの登録はこちら</a></p>
+    </div>
+</div>
+
+<h3>現在貸出中のDVD</h3>
+<table>
+    <thead>
+        <tr>
+            <th>貸出日</th>
+            <th>ユーザー</th>
+            <th>DVDタイトル</th>
+            <th>アクション</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in active_rentals %}
+        <tr>
+            <td>{{ rental.rental_date }}</td>
+            <td>{{ rental.user_name }}</td>
+            <td>{{ rental.dvd_title }}</td>
+            <td>
+                <a href="{{ url_for('return_dvd', rental_id=rental.rental_id) }}" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">返却</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" style="text-align: center;">貸出中のDVDはありません。</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

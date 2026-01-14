@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>ユーザー管理</h2>
+
+<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+    <h3>新規ユーザー登録</h3>
+    <form action="{{ url_for('users') }}" method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div>
+            <label for="name">名前</label>
+            <input type="text" id="name" name="name" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div>
+            <label for="phone">電話番号</label>
+            <input type="tel" id="phone" name="phone" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div>
+            <label for="birth_date">生年月日</label>
+            <input type="date" id="birth_date" name="birth_date" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="grid-column: 1 / -1;">
+            <label for="address">住所</label>
+            <input type="text" id="address" name="address" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="grid-column: 1 / -1;">
+            <button type="submit" class="btn btn-primary">ユーザーを登録</button>
+        </div>
+    </form>
+</div>
+
+<h3>ユーザー一覧</h3>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>名前</th>
+            <th>電話番号</th>
+            <th>住所</th>
+            <th>生年月日</th>
+            <th>登録日</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.user_id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.phone }}</td>
+            <td>{{ user.address }}</td>
+            <td>{{ user.birth_date }}</td>
+            <td>{{ user.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

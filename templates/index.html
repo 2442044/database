@@ -1,103 +1,56 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DVDレンタルシステム</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">DVDレンタル</a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="/">ダッシュボード</a>
-                <a class="nav-link" href="/dvds">DVD一覧</a>
-            </div>
-        </div>
-    </nav>
+{% extends "layout.html" %}
+{% block content %}
+<h2>システム状況（{{ now }}）</h2>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card text-white bg-primary mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">登録会員数</h5>
-                        <p class="card-text h2">{{ user_count }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-success mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">総DVD数</h5>
-                        <p class="card-text h2">{{ dvd_count }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-white bg-warning mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">貸出中</h5>
-                        <p class="card-text h2">{{ rental_count }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h3>レンタル登録</h3>
-                <form action="/rent" method="POST" class="card p-3 shadow-sm">
-                    <div class="mb-3">
-                        <label for="user_id" class="form-label">会員ID</label>
-                        <input type="number" name="user_id" id="user_id" class="form-control" value="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="dvd_id" class="form-label">DVD ID</label>
-                        <input type="number" name="dvd_id" id="dvd_id" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">貸出実行</button>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <h3>最近の貸出状況</h3>
-                <table class="table table-striped card shadow-sm">
-                    <thead>
-                        <tr>
-                            <th>会員</th>
-                            <th>DVD</th>
-                            <th>貸出日</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rental in recent_rentals %}
-                        <tr>
-                            <td>{{ rental.user_name }}</td>
-                            <td>{{ rental.dvd_title }}</td>
-                            <td>{{ rental.rental_date }}</td>
-                            <td>
-                                {% if not rental.return_date %}
-                                <a href="/return/{{ rental.rental_id }}" class="btn btn-sm btn-outline-danger">返却</a>
-                                {% else %}
-                                <span class="badge bg-secondary">返却済</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div style="background: #e1f5fe; padding: 1.5rem; border-radius: 8px; text-align: center;">
+        <h3>登録ユーザー数</h3>
+        <p style="font-size: 2rem; margin: 0; color: #0288d1;">{{ user_count }} 名</p>
     </div>
-</body>
-</html>
+    <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; text-align: center;">
+        <h3>登録DVD数</h3>
+        <p style="font-size: 2rem; margin: 0; color: #388e3c;">{{ dvd_count }} 本</p>
+    </div>
+    <div style="background: #fff3e0; padding: 1.5rem; border-radius: 8px; text-align: center;">
+        <h3>貸出中</h3>
+        <p style="font-size: 2rem; margin: 0; color: #f57c00;">{{ active_rentals }} 本</p>
+    </div>
+    <div style="background: #f3e5f5; padding: 1.5rem; border-radius: 8px; text-align: center;">
+        <h3>本日の貸出</h3>
+        <p style="font-size: 2rem; margin: 0; color: #7b1fa2;">{{ today_rentals }} 件</p>
+    </div>
+</div>
+
+<h3>最近のレンタル履歴</h3>
+<table>
+    <thead>
+        <tr>
+            <th>レンタル日</th>
+            <th>ユーザー</th>
+            <th>DVDタイトル</th>
+            <th>状態</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rental in recent_rentals %}
+        <tr>
+            <td>{{ rental.rental_date }}</td>
+            <td>{{ rental.user_name }}</td>
+            <td>{{ rental.dvd_title }}</td>
+            <td>
+                {% if rental.return_date %}
+                <span class="badge badge-success">返却済</span>
+                {% else %}
+                <span class="badge badge-warning">貸出中</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('rental_page') }}" class="btn btn-primary">貸出・返却ページへ</a>
+    <a href="{{ url_for('dvds') }}" class="btn btn-secondary">DVDを探す</a>
+</div>
+{% endblock %}
