@@ -19,6 +19,7 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        member_code TEXT UNIQUE,
         name TEXT NOT NULL,
         address TEXT NOT NULL,
         phone TEXT UNIQUE NOT NULL,
@@ -67,7 +68,7 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO dvds (title, genre_id, stock_count, storage_location) VALUES ('Inception', 4, 5, 'A-1')")
         cursor.execute("INSERT INTO dvds (title, genre_id, stock_count, storage_location) VALUES ('The Dark Knight', 1, 3, 'A-2')")
-        cursor.execute("INSERT INTO users (name, address, phone, birth_date) VALUES ('山田 太郎', '東京都新宿区', '090-1234-5678', '1990-01-01')")
+        cursor.execute("INSERT INTO users (name, address, phone, birth_date, member_code) VALUES ('山田 太郎', '東京都新宿区', '090-1234-5678', '1990-01-01', 'M00001')")
 
     conn.commit()
     conn.close()

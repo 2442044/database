@@ -19,7 +19,7 @@
                         </div>
                         <datalist id="user_list">
                             {% for user in users %}
-                            <option value="{{ user.name }} [ID:{{ user.user_id }}]"></option>
+                            <option value="{{ user.name }} ({{ user.member_code }}) [ID:{{ user.user_id }}]"></option>
                             {% endfor %}
                         </datalist>
                         <input type="hidden" id="user_id" name="user_id" required>

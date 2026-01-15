@@ -117,13 +117,14 @@ def add_dvd():
 def users():
     conn = get_db_connection()
     if request.method == 'POST':
+        member_code = request.form['member_code']
         name = request.form['name']
         address = request.form['address']
         phone = request.form['phone']
         birth_date = request.form['birth_date']
         try:
-            conn.execute('INSERT INTO users (name, address, phone, birth_date) VALUES (?, ?, ?, ?)',
-                         (name, address, phone, birth_date))
+            conn.execute('INSERT INTO users (name, address, phone, birth_date, member_code) VALUES (?, ?, ?, ?, ?)',
+                         (name, address, phone, birth_date, member_code))
             conn.commit()
             flash('ユーザーを登録しました。', 'success')
         except Exception as e:
@@ -137,7 +138,7 @@ def users():
 @app.route('/rental')
 def rental_page():
     conn = get_db_connection()
-    users = conn.execute('SELECT user_id, name FROM users').fetchall()
+    users = conn.execute('SELECT user_id, name, member_code FROM users').fetchall()
     # 在庫があるDVDのみ表示
     dvds = conn.execute('SELECT dvd_id, title FROM dvds WHERE stock_count > 0').fetchall()
     # 貸出中のもの
