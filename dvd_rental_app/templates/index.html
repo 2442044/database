@@ -37,60 +37,90 @@
         </div>
     </div>
     <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border-0 shadow-sm" style="background-color: #f3e5f5;">
+        <div class="card h-100 border-0 shadow-sm" style="background-color: #ffebee;">
             <div class="card-body text-center">
-                <div class="mb-2" style="color: #9c27b0;">
-                    <i class="fas fa-calendar-check fa-2x"></i>
+                <div class="mb-2 text-danger">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
                 </div>
-                <h5 class="card-title text-muted">本日の貸出</h5>
-                <p class="display-5 fw-bold mb-0" style="color: #9c27b0;">{{ today_rentals }} <span class="fs-6">件</span></p>
+                <h5 class="card-title text-muted">期限超過</h5>
+                <p class="display-5 fw-bold text-danger mb-0">{{ overdue_rentals }} <span class="fs-6">件</span></p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h3 class="card-title h5 mb-0"><i class="fas fa-history me-2"></i>最近のレンタル履歴</h3>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>レンタル日</th>
-                        <th>ユーザー</th>
-                        <th>DVDタイトル</th>
-                        <th>状態</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for rental in recent_rentals %}
-                    <tr>
-                        <td>{{ rental.rental_date }}</td>
-                        <td>{{ rental.user_name }}</td>
-                        <td>{{ rental.dvd_title }}</td>
-                        <td>
-                            {% if rental.return_date %}
-                            <span class="badge bg-success">返却済</span>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h3 class="card-title h5 mb-0"><i class="fas fa-history me-2"></i>最近のレンタル履歴</h3>
+                <span class="badge bg-primary">直近5件</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>レンタル日</th>
+                                <th>ユーザー</th>
+                                <th>DVDタイトル</th>
+                                <th>状態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in recent_rentals %}
+                            <tr>
+                                <td>{{ rental.rental_date }}</td>
+                                <td>{{ rental.user_name }}</td>
+                                <td>{{ rental.dvd_title }}</td>
+                                <td>
+                                    {% if rental.return_date %}
+                                    <span class="badge bg-success">返却済</span>
+                                    {% else %}
+                                        {% if rental.rental_date | is_overdue %}
+                                        <span class="badge bg-danger">期限超過</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">貸出中</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
                             {% else %}
-                            <span class="badge bg-warning text-dark">貸出中</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">履歴はありません。</td>
-                    </tr>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">履歴はありません。</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h3 class="card-title h5 mb-0"><i class="fas fa-tags me-2"></i>ジャンル別在庫</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for stat in genre_stats %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ stat.name }}
+                        <div>
+                            <span class="badge bg-secondary rounded-pill">{{ stat.count }} 作品</span>
+                            <span class="badge bg-info rounded-pill">{{ stat.total_stock or 0 }} 在庫</span>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="d-flex gap-2">
     <a href="{{ url_for('rental_page') }}" class="btn btn-primary"><i class="fas fa-exchange-alt me-2"></i>貸出・返却ページへ</a>
-    <a href="{{ url_for('dvds') }}" class="btn btn-secondary"><i class="fas fa-search me-2"></i>DVDを探す</a>
+    <a href="{{ url_for('dvds') }}" class="btn btn-outline-primary"><i class="fas fa-search me-2"></i>DVDを探す</a>
+    <a href="{{ url_for('genres') }}" class="btn btn-outline-secondary"><i class="fas fa-tags me-2"></i>ジャンル管理</a>
 </div>
 {% endblock %}

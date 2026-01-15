@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tags me-2"></i>ジャンル管理</h2>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">新規ジャンル追加</h5>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">ジャンル名</label>
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="例: ホラー">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">追加</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">ジャンル一覧</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ジャンル名</th>
+                                <th>アクション</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for genre in genres %}
+                            <tr>
+                                <td>{{ genre.genre_id }}</td>
+                                <td>{{ genre.name }}</td>
+                                <td>
+                                    <form action="{{ url_for('delete_genre', genre_id=genre.genre_id) }}" method="POST" style="display:inline;" onsubmit="return confirm('本当に削除しますか？');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> 削除
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

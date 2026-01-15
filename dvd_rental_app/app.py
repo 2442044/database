@@ -38,6 +38,21 @@ def index():
     today = datetime.date.today().strftime('%Y-%m-%d')
     today_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE date(rental_date) = ?', (today,)).fetchone()[0]
 
+    # 期限切れの貸出数（7日以上）
+    overdue_rentals = conn.execute('''
+        SELECT COUNT(*) FROM rentals 
+        WHERE return_date IS NULL 
+        AND julianday('now') - julianday(rental_date) > 7
+    ''').fetchone()[0]
+
+    # ジャンルごとの在庫
+    genre_stats = conn.execute('''
+        SELECT g.name, COUNT(d.dvd_id) as count, SUM(d.stock_count) as total_stock
+        FROM genres g
+        LEFT JOIN dvds d ON g.genre_id = d.genre_id
+        GROUP BY g.genre_id
+    ''').fetchall()
+
     # 最近のレンタル情報
     recent_rentals = conn.execute('''
         SELECT r.*, u.name as user_name, d.title as dvd_title 
@@ -54,6 +69,8 @@ def index():
                          dvd_count=dvd_count, 
                          active_rentals=active_rentals, 
                          today_rentals=today_rentals,
+                         overdue_rentals=overdue_rentals,
+                         genre_stats=genre_stats,
                          recent_rentals=recent_rentals,
                          now=now)
 
@@ -255,6 +272,41 @@ def rental_page():
     ''').fetchall()
     conn.close()
     return render_template('rental.html', users=users, dvds=dvds, active_rentals=active_rentals)
+
+@app.route('/genres', methods=['GET', 'POST'])
+def genres():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        name = request.form['name']
+        try:
+            conn.execute('INSERT INTO genres (name) VALUES (?)', (name,))
+            conn.commit()
+            flash('ジャンルを追加しました。', 'success')
+        except Exception as e:
+            flash(f'追加エラー: {str(e)}', 'error')
+        return redirect(url_for('genres'))
+
+    genres = conn.execute('SELECT * FROM genres').fetchall()
+    conn.close()
+    return render_template('genres.html', genres=genres)
+
+@app.route('/delete_genre/<int:genre_id>', methods=['POST'])
+def delete_genre(genre_id):
+    conn = get_db_connection()
+    try:
+        # ジャンルがDVDで使用されているかチェック
+        dvd_count = conn.execute('SELECT COUNT(*) FROM dvds WHERE genre_id = ?', (genre_id,)).fetchone()[0]
+        if dvd_count > 0:
+            flash('このジャンルを使用しているDVDがあるため削除できません。', 'error')
+        else:
+            conn.execute('DELETE FROM genres WHERE genre_id = ?', (genre_id,))
+            conn.commit()
+            flash('ジャンルを削除しました。', 'success')
+    except Exception as e:
+        flash(f'削除エラー: {str(e)}', 'error')
+    finally:
+        conn.close()
+    return redirect(url_for('genres'))
 
 @app.route('/rent', methods=['POST'])
 def rent_dvd():
