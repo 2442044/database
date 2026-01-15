@@ -17,7 +17,7 @@ digraph "twoDegreesRelationshipsDiagram" {
       <TR><TD PORT="description" COLSPAN="2" ALIGN="LEFT"><TABLE BORDER="0" CELLSPACING="0" ALIGN="LEFT"><TR ALIGN="LEFT"><TD ALIGN="LEFT" FIXEDSIZE="TRUE" WIDTH="15" HEIGHT="16"></TD><TD ALIGN="LEFT" FIXEDSIZE="TRUE" WIDTH="96" HEIGHT="16">description</TD></TR></TABLE></TD><TD PORT="description.type" ALIGN="LEFT">text[2000000000]</TD></TR>
       <TR><TD ALIGN="LEFT" BGCOLOR="#ffffff">&lt; 1</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">3 rows</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">1 &gt;</TD></TR>
     </TABLE>>
-    URL="../../tables/dvds.html"
+    URL="dvds.html"
     target="_top"
     tooltip="dvds"
   ];
@@ -29,7 +29,7 @@ digraph "twoDegreesRelationshipsDiagram" {
       <TR><TD PORT="elipses" COLSPAN="3" ALIGN="LEFT">...</TD></TR>
       <TR><TD ALIGN="LEFT" BGCOLOR="#ffffff">  </TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">4 rows</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">1 &gt;</TD></TR>
     </TABLE>>
-    URL="../../tables/genres.html"
+    URL="genres.html"
     target="_top"
     tooltip="genres"
   ];
@@ -43,7 +43,7 @@ digraph "twoDegreesRelationshipsDiagram" {
       <TR><TD PORT="elipses" COLSPAN="3" ALIGN="LEFT">...</TD></TR>
       <TR><TD ALIGN="LEFT" BGCOLOR="#ffffff">&lt; 2</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">2 rows</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">  </TD></TR>
     </TABLE>>
-    URL="../../tables/rentals.html"
+    URL="rentals.html"
     target="_top"
     tooltip="rentals"
   ];
@@ -54,7 +54,7 @@ digraph "twoDegreesRelationshipsDiagram" {
       <TR><TD PORT="elipses" COLSPAN="3" ALIGN="LEFT">...</TD></TR>
       <TR><TD ALIGN="LEFT" BGCOLOR="#ffffff">  </TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">3 rows</TD><TD ALIGN="RIGHT" BGCOLOR="#ffffff">1 &gt;</TD></TR>
     </TABLE>>
-    URL="../../tables/users.html"
+    URL="users.html"
     target="_top"
     tooltip="users"
   ];

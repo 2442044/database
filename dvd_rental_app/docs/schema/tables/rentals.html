@@ -278,12 +278,21 @@
                                 </ul>
                                 <div class="tab-content no-padding">
                                     <div class="chart tab-pane active" id="oneDegreeImg-chart" style="position: relative; overflow-x:auto;">
-                                        
-                                        <a name='diagram'><object type="image/svg+xml" id="oneDegreeImg" data="../diagrams/tables/rentals.1degree.svg" class="diagram" border="0" align="left"></object></a>
+                                        <map id="oneDegreeRelationshipsDiagram" name="oneDegreeRelationshipsDiagram">
+<area shape="rect" id="node1" href="rentals.html" target="_top" title="rentals" alt="" coords="227,60,540,309">
+<area shape="rect" id="node2" href="dvds.html" target="_top" title="dvds" alt="" coords="5,205,183,358">
+<area shape="rect" id="node3" href="users.html" target="_top" title="users" alt="" coords="15,5,173,187">
+</map>
+                                        <a name='diagram'><img id="oneDegreeImg" src="../diagrams/tables/rentals.1degree.png" usemap="#oneDegreeRelationshipsDiagram" class="diagram" border="0" align="left"></a>
                                     </div>
                                     <div class="chart tab-pane " id="twodegreesDegreeImg-chart" style="position: relative; overflow-x:auto;">
-                                        
-                                        <a name='diagram'><object type="image/svg+xml" id="twodegreesDegreeImg" data="../diagrams/tables/rentals.2degrees.svg" class="diagram" border="0" align="left"></object></a>
+                                        <map id="twoDegreesRelationshipsDiagram" name="twoDegreesRelationshipsDiagram">
+<area shape="rect" id="node1" href="dvds.html" target="_top" title="dvds" alt="" coords="175,205,352,358">
+<area shape="rect" id="node2" href="genres.html" target="_top" title="genres" alt="" coords="5,236,131,330">
+<area shape="rect" id="node3" href="rentals.html" target="_top" title="rentals" alt="" coords="396,60,710,309">
+<area shape="rect" id="node4" href="users.html" target="_top" title="users" alt="" coords="185,5,342,187">
+</map>
+                                        <a name='diagram'><img id="twodegreesDegreeImg" src="../diagrams/tables/rentals.2degrees.png" usemap="#twoDegreesRelationshipsDiagram" class="diagram" border="0" align="left"></a>
                                     </div>
                                 </div>
                             </div>

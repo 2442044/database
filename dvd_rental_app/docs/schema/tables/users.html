@@ -302,12 +302,19 @@
                                 </ul>
                                 <div class="tab-content no-padding">
                                     <div class="chart tab-pane active" id="oneDegreeImg-chart" style="position: relative; overflow-x:auto;">
-                                        
-                                        <a name='diagram'><object type="image/svg+xml" id="oneDegreeImg" data="../diagrams/tables/users.1degree.svg" class="diagram" border="0" align="left"></object></a>
+                                        <map id="oneDegreeRelationshipsDiagram" name="oneDegreeRelationshipsDiagram">
+<area shape="rect" id="node1" href="rentals.html" target="_top" title="rentals" alt="" coords="383,5,520,187">
+<area shape="rect" id="node2" href="users.html" target="_top" title="users" alt="" coords="5,32,339,310">
+</map>
+                                        <a name='diagram'><img id="oneDegreeImg" src="../diagrams/tables/users.1degree.png" usemap="#oneDegreeRelationshipsDiagram" class="diagram" border="0" align="left"></a>
                                     </div>
                                     <div class="chart tab-pane " id="twodegreesDegreeImg-chart" style="position: relative; overflow-x:auto;">
-                                        
-                                        <a name='diagram'><object type="image/svg+xml" id="twodegreesDegreeImg" data="../diagrams/tables/users.2degrees.svg" class="diagram" border="0" align="left"></object></a>
+                                        <map id="twoDegreesRelationshipsDiagram" name="twoDegreesRelationshipsDiagram">
+<area shape="rect" id="node1" href="rentals.html" target="_top" title="rentals" alt="" coords="383,111,520,293">
+<area shape="rect" id="node2" href="dvds.html" target="_top" title="dvds" alt="" coords="107,302,237,396">
+<area shape="rect" id="node3" href="users.html" target="_top" title="users" alt="" coords="5,5,339,284">
+</map>
+                                        <a name='diagram'><img id="twodegreesDegreeImg" src="../diagrams/tables/users.2degrees.png" usemap="#twoDegreesRelationshipsDiagram" class="diagram" border="0" align="left"></a>
                                     </div>
                                 </div>
                             </div>
