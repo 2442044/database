@@ -1,4 +1,0 @@
-genres
-users
-dvds
-rentals
