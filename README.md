@@ -103,7 +103,7 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 本システムのデータベース構造は以下のようになっています。
 
-![ER図](ER図/diagrams/summary/relationships.real.large.png)
+![ER図](dvd_rental_app/ER図/diagrams/summary/relationships.real.large.png)
 
 ### テーブル概要
 - **users**: 会員情報を管理
@@ -111,4 +111,4 @@ Pythonがインストールされている場合、以下の手順で起動可�
 - **genres**: DVDのジャンル定義
 - **rentals**: 貸出・返却のトランザクション履歴
 
-詳細なカラム定義や制約については、`ER図/index.html` を開くことで詳細なドキュメントを閲覧できます。
+詳細なカラム定義や制約については、`dvd_rental_app/ER図/index.html` を開くことで詳細なドキュメントを閲覧できます。
