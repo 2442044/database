@@ -103,7 +103,7 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 本システムのデータベース構造は以下のようになっています。
 
-![ER図](dvd_rental_app/ER%E5%9B%B3/diagrams/summary/relationships.real.large.png)
+![ER図](docs/er_diagram.png)
 
 ### テーブル概要
 - **users**: 会員情報を管理
