@@ -1,76 +1,112 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>貸出・返却管理</h2>
+<h2 class="mb-4"><i class="fas fa-exchange-alt me-2"></i>貸出・返却管理</h2>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+<div class="row mb-5">
     <!-- 貸出フォーム -->
-    <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px;">
-        <h3>新規貸出</h3>
-        <form action="{{ url_for('rent_dvd') }}" method="post">
-            <div style="margin-bottom: 1rem;">
-                <label for="user_input">ユーザー (名前または会員番号)</label>
-                <input type="text" id="user_input" list="user_list" class="form-control" autocomplete="off" placeholder="名前を入力..." style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
-                <datalist id="user_list">
-                    {% for user in users %}
-                    <option value="{{ user.name }} [ID:{{ user.user_id }}]"></option>
-                    {% endfor %}
-                </datalist>
-                <input type="hidden" id="user_id" name="user_id" required>
-                <div id="user_error" style="color: red; font-size: 0.8rem; display: none; margin-top: 0.25rem;">リストから選択してください</div>
+    <div class="col-md-7 mb-4 mb-md-0">
+        <div class="card h-100 shadow-sm border-primary">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title h5 mb-0"><i class="fas fa-hand-holding me-2"></i>新規貸出</h3>
             </div>
-            
-            <div style="margin-bottom: 1rem;">
-                <label for="dvd_input">DVD (タイトルまたはID)</label>
-                <input type="text" id="dvd_input" list="dvd_list" class="form-control" autocomplete="off" placeholder="DVDを検索..." style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
-                <datalist id="dvd_list">
-                    {% for dvd in dvds %}
-                    <option value="{{ dvd.title }} [ID:{{ dvd.dvd_id }}]"></option>
-                    {% endfor %}
-                </datalist>
-                <input type="hidden" id="dvd_id" name="dvd_id" value="{{ request.args.get('dvd_id', '') }}" required>
-                <div id="dvd_error" style="color: red; font-size: 0.8rem; display: none; margin-top: 0.25rem;">リストから選択してください</div>
+            <div class="card-body bg-light">
+                <form action="{{ url_for('rent_dvd') }}" method="post">
+                    <div class="mb-3">
+                        <label for="user_input" class="form-label">ユーザー (名前または会員番号)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" id="user_input" list="user_list" class="form-control" autocomplete="off" placeholder="名前を入力..." required>
+                        </div>
+                        <datalist id="user_list">
+                            {% for user in users %}
+                            <option value="{{ user.name }} [ID:{{ user.user_id }}]"></option>
+                            {% endfor %}
+                        </datalist>
+                        <input type="hidden" id="user_id" name="user_id" required>
+                        <div id="user_error" class="text-danger small mt-1" style="display: none;">リストから選択してください</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="dvd_input" class="form-label">DVD (タイトルまたはID)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-compact-disc"></i></span>
+                            <input type="text" id="dvd_input" list="dvd_list" class="form-control" autocomplete="off" placeholder="DVDを検索..." required>
+                        </div>
+                        <datalist id="dvd_list">
+                            {% for dvd in dvds %}
+                            <option value="{{ dvd.title }} [ID:{{ dvd.dvd_id }}]"></option>
+                            {% endfor %}
+                        </datalist>
+                        <input type="hidden" id="dvd_id" name="dvd_id" value="{{ request.args.get('dvd_id', '') }}" required>
+                        <div id="dvd_error" class="text-danger small mt-1" style="display: none;">リストから選択してください</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-check me-2"></i>貸出を実行</button>
+                </form>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">貸出を実行</button>
-        </form>
+        </div>
     </div>
 
     <!-- 統計・クイック情報 -->
-    <div style="background: #f1f8e9; padding: 1.5rem; border-radius: 8px;">
-        <h3>ヘルプ</h3>
-        <p>1. 左のフォームからユーザーとDVDを選択して貸出を行います。</p>
-        <p>2. 下の一覧から「返却」ボタンを押すことで返却処理を行います。</p>
-        <p>3. 在庫がないDVDはリストに表示されません。</p>
-        <p><a href="{{ url_for('users') }}">新しいユーザーの登録はこちら</a></p>
+    <div class="col-md-5">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title h5 mb-0"><i class="fas fa-info-circle me-2"></i>ヘルプ</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><i class="fas fa-chevron-right me-2 text-muted"></i>左のフォームからユーザーとDVDを選択して貸出を行います。</li>
+                    <li class="list-group-item"><i class="fas fa-chevron-right me-2 text-muted"></i>下の一覧から「返却」ボタンを押すことで返却処理を行います。</li>
+                    <li class="list-group-item"><i class="fas fa-chevron-right me-2 text-muted"></i>在庫がないDVDはリストに表示されません。</li>
+                    <li class="list-group-item"><i class="fas fa-chevron-right me-2 text-muted"></i>貸出期間は7日間です。期限を過ぎると赤く表示されます。</li>
+                </ul>
+                <div class="mt-3 text-center">
+                    <a href="{{ url_for('users') }}" class="btn btn-outline-success btn-sm">新しいユーザーの登録はこちら</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<h3>現在貸出中のDVD</h3>
-<table>
-    <thead>
-        <tr>
-            <th>貸出日</th>
-            <th>ユーザー</th>
-            <th>DVDタイトル</th>
-            <th>アクション</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for rental in active_rentals %}
-        <tr>
-            <td>{{ rental.rental_date }}</td>
-            <td>{{ rental.user_name }}</td>
-            <td>{{ rental.dvd_title }}</td>
-            <td>
-                <a href="{{ url_for('return_dvd', rental_id=rental.rental_id) }}" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">返却</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="4" style="text-align: center;">貸出中のDVDはありません。</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h3 class="mb-3"><i class="fas fa-list me-2"></i>現在貸出中のDVD</h3>
+<div class="table-responsive">
+    <table class="table table-hover align-middle shadow-sm bg-white rounded">
+        <thead class="table-light">
+            <tr>
+                <th>貸出日</th>
+                <th>ユーザー</th>
+                <th>DVDタイトル</th>
+                <th>状態</th>
+                <th>アクション</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rental in active_rentals %}
+            {% set overdue = rental.rental_date | is_overdue %}
+            <tr class="{{ 'table-danger' if overdue else '' }}">
+                <td>{{ rental.rental_date }}</td>
+                <td><i class="fas fa-user me-1 text-secondary"></i>{{ rental.user_name }}</td>
+                <td><i class="fas fa-film me-1 text-secondary"></i>{{ rental.dvd_title }}</td>
+                <td>
+                    {% if overdue %}
+                        <span class="badge bg-danger rounded-pill"><i class="fas fa-exclamation-circle me-1"></i>期限切れ</span>
+                    {% else %}
+                        <span class="badge bg-success rounded-pill">貸出中</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('return_dvd', rental_id=rental.rental_id) }}" class="btn btn-danger btn-sm" onclick="return confirm('返却処理を実行しますか？');">
+                        <i class="fas fa-undo me-1"></i>返却
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center py-4 text-muted">現在、貸出中のDVDはありません。</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

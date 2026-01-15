@@ -1,71 +1,94 @@
 {% extends "layout.html" %}
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h2 style="margin: 0;">DVD検索</h2>
-    <a href="{{ url_for('add_dvd') }}" class="btn btn-primary">＋ 新規商品追加</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0"><i class="fas fa-compact-disc me-2"></i>DVD検索</h2>
+    <a href="{{ url_for('add_dvd') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>新規商品追加</a>
 </div>
 
-<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-    <form action="{{ url_for('dvds') }}" method="get" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 200px;">
-            <label for="query">タイトル検索</label>
-            <input type="text" id="query" name="query" value="{{ query }}" placeholder="キーワードを入力..." style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
-        </div>
-        <div style="min-width: 150px;">
-            <label for="genre_id">ジャンル</label>
-            <select id="genre_id" name="genre_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
-                <option value="">すべて</option>
-                {% for genre in genres %}
-                <option value="{{ genre.genre_id }}" {% if genre_id|string == genre.genre_id|string %}selected{% endif %}>{{ genre.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">検索</button>
-        <a href="{{ url_for('dvds') }}" class="btn" style="background: #95a5a6; color: white;">リセット</a>
-    </form>
+<div class="card mb-4 bg-light shadow-sm border-0">
+    <div class="card-body">
+        <form action="{{ url_for('dvds') }}" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label for="query" class="form-label">タイトル検索</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="query" name="query" value="{{ query }}" class="form-control" placeholder="キーワードを入力...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="genre_id" class="form-label">ジャンル</label>
+                <select id="genre_id" name="genre_id" class="form-select">
+                    <option value="">すべて</option>
+                    {% for genre in genres %}
+                    <option value="{{ genre.genre_id }}" {% if genre_id|string == genre.genre_id|string %}selected{% endif %}>{{ genre.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-filter me-1"></i>検索</button>
+                <a href="{{ url_for('dvds') }}" class="btn btn-secondary"><i class="fas fa-redo me-1"></i>リセット</a>
+            </div>
+        </form>
+    </div>
 </div>
 
-<h3>DVD一覧</h3>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>タイトル</th>
-            <th>ジャンル</th>
-            <th>在庫数</th>
-            <th>保管場所</th>
-            <th>アクション</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for dvd in dvds %}
-        <tr>
-            <td>{{ dvd.dvd_id }}</td>
-            <td>
-                {% if dvd.stock_count > 0 %}
-                <a href="{{ url_for('rental_page', dvd_id=dvd.dvd_id) }}" style="text-decoration: none; color: inherit; font-weight: bold;">
-                    {{ dvd.title }}
-                </a>
-                {% else %}
-                {{ dvd.title }}
-                {% endif %}
-            </td>
-            <td>{{ dvd.genre_name }}</td>
-            <td>
-                {% if dvd.stock_count > 0 %}
-                {{ dvd.stock_count }}
-                {% else %}
-                <span style="color: red;">在庫なし</span>
-                {% endif %}
-            </td>
-            <td>{{ dvd.storage_location }}</td>
-            <td>
-                {% if dvd.stock_count > 0 %}
-                <a href="{{ url_for('rental_page', dvd_id=dvd.dvd_id) }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">貸出へ</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h3 class="card-title h5 mb-0"><i class="fas fa-list me-2"></i>DVD一覧</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>タイトル</th>
+                        <th>ジャンル</th>
+                        <th>在庫数</th>
+                        <th>保管場所</th>
+                        <th>アクション</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dvd in dvds %}
+                    <tr>
+                        <td>{{ dvd.dvd_id }}</td>
+                        <td>
+                            {% if dvd.stock_count > 0 %}
+                            <a href="{{ url_for('rental_page', dvd_id=dvd.dvd_id) }}" class="text-decoration-none fw-bold text-dark">
+                                <i class="fas fa-film me-1 text-secondary"></i>{{ dvd.title }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted"><i class="fas fa-film me-1"></i>{{ dvd.title }}</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-info text-dark">{{ dvd.genre_name }}</span></td>
+                        <td>
+                            {% if dvd.stock_count > 0 %}
+                            <span class="badge bg-success rounded-pill">{{ dvd.stock_count }}</span>
+                            {% else %}
+                            <span class="badge bg-danger rounded-pill">在庫なし</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ dvd.storage_location }}</small></td>
+                        <td>
+                            {% if dvd.stock_count > 0 %}
+                            <a href="{{ url_for('rental_page', dvd_id=dvd.dvd_id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-share me-1"></i>貸出へ
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline-secondary btn-sm" disabled>貸出不可</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">該当するDVDが見つかりません。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -8,6 +8,19 @@ app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey')
 
 DATABASE = os.path.join(os.path.dirname(__file__), 'dvd_rental.db')
 
+@app.template_filter('is_overdue')
+def is_overdue(rental_date_str):
+    if not rental_date_str:
+        return False
+    try:
+        # rental_date_str は 'YYYY-MM-DD HH:MM:SS' 形式を想定
+        rental_date = datetime.datetime.strptime(rental_date_str, '%Y-%m-%d %H:%M:%S')
+        # 期限は7日後
+        due_date = rental_date + datetime.timedelta(days=7)
+        return datetime.datetime.now() > due_date
+    except ValueError:
+        return False
+
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
