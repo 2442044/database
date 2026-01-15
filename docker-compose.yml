@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: dvd_rental_app
+    volumes:
+      - .:/app
+    environment:
+      - SECRET_KEY=your_secret_key_here
+    restart: always
+
+  web:
+    image: nginx:alpine
+    container_name: dvd_rental_web
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    restart: always

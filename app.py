@@ -113,6 +113,60 @@ def add_dvd():
     conn.close()
     return render_template('add_dvd.html', genres=genres)
 
+@app.route('/edit_dvd/<int:dvd_id>', methods=['GET', 'POST'])
+def edit_dvd(dvd_id):
+    conn = get_db_connection()
+    if request.method == 'POST':
+        title = request.form['title']
+        genre_id = request.form['genre_id']
+        release_date = request.form['release_date']
+        stock_count = request.form['stock_count']
+        storage_location = request.form['storage_location']
+        description = request.form['description']
+        
+        try:
+            if not genre_id: genre_id = None
+            if not release_date: release_date = None
+
+            conn.execute('''
+                UPDATE dvds 
+                SET title = ?, genre_id = ?, release_date = ?, stock_count = ?, storage_location = ?, description = ?
+                WHERE dvd_id = ?
+            ''', (title, genre_id, release_date, stock_count, storage_location, description, dvd_id))
+            conn.commit()
+            flash('DVD情報を更新しました。', 'success')
+            return redirect(url_for('dvds'))
+        except Exception as e:
+            flash(f'更新エラー: {str(e)}', 'error')
+    
+    dvd = conn.execute('SELECT * FROM dvds WHERE dvd_id = ?', (dvd_id,)).fetchone()
+    genres = conn.execute('SELECT * FROM genres').fetchall()
+    conn.close()
+    
+    if dvd is None:
+        flash('DVDが見つかりません。', 'error')
+        return redirect(url_for('dvds'))
+        
+    return render_template('edit_dvd.html', dvd=dvd, genres=genres)
+
+@app.route('/delete_dvd/<int:dvd_id>', methods=['POST'])
+def delete_dvd(dvd_id):
+    conn = get_db_connection()
+    try:
+        # レンタル履歴のチェック
+        rental_count = conn.execute('SELECT COUNT(*) FROM rentals WHERE dvd_id = ?', (dvd_id,)).fetchone()[0]
+        if rental_count > 0:
+             flash('レンタル履歴があるDVDは削除できません。', 'error')
+        else:
+            conn.execute('DELETE FROM dvds WHERE dvd_id = ?', (dvd_id,))
+            conn.commit()
+            flash('DVDを削除しました。', 'success')
+    except Exception as e:
+        flash(f'削除エラー: {str(e)}', 'error')
+    finally:
+        conn.close()
+    return redirect(url_for('dvds'))
+
 @app.route('/users', methods=['GET', 'POST'])
 def users():
     conn = get_db_connection()
@@ -134,6 +188,55 @@ def users():
     users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
     conn.close()
     return render_template('users.html', users=users)
+
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+def edit_user(user_id):
+    conn = get_db_connection()
+    if request.method == 'POST':
+        member_code = request.form['member_code']
+        name = request.form['name']
+        address = request.form['address']
+        phone = request.form['phone']
+        birth_date = request.form['birth_date']
+        
+        try:
+            conn.execute('''
+                UPDATE users 
+                SET member_code = ?, name = ?, address = ?, phone = ?, birth_date = ?
+                WHERE user_id = ?
+            ''', (member_code, name, address, phone, birth_date, user_id))
+            conn.commit()
+            flash('ユーザー情報を更新しました。', 'success')
+            return redirect(url_for('users'))
+        except Exception as e:
+            flash(f'更新エラー: {str(e)}', 'error')
+            
+    user = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+    conn.close()
+    
+    if user is None:
+        flash('ユーザーが見つかりません。', 'error')
+        return redirect(url_for('users'))
+        
+    return render_template('edit_user.html', user=user)
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    conn = get_db_connection()
+    try:
+        # レンタル履歴のチェック
+        rental_count = conn.execute('SELECT COUNT(*) FROM rentals WHERE user_id = ?', (user_id,)).fetchone()[0]
+        if rental_count > 0:
+             flash('レンタル履歴があるユーザーは削除できません。', 'error')
+        else:
+            conn.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
+            conn.commit()
+            flash('ユーザーを削除しました。', 'success')
+    except Exception as e:
+        flash(f'削除エラー: {str(e)}', 'error')
+    finally:
+        conn.close()
+    return redirect(url_for('users'))
 
 @app.route('/rental')
 def rental_page():

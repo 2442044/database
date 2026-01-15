@@ -49,6 +49,7 @@
                         <th>住所</th>
                         <th>生年月日</th>
                         <th>登録日</th>
+                        <th>アクション</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,6 +62,19 @@
                         <td>{{ user.address }}</td>
                         <td>{{ user.birth_date or '-' }}</td>
                         <td><small class="text-muted">{{ user.created_at }}</small></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('edit_user', user_id=user.user_id) }}" class="btn btn-outline-warning btn-sm" title="編集">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <form action="{{ url_for('delete_user', user_id=user.user_id) }}" method="post" style="display:inline;" onsubmit="return confirm('本当に削除しますか？');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="削除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
