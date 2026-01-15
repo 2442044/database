@@ -8,24 +8,27 @@
         <h3>新規貸出</h3>
         <form action="{{ url_for('rent_dvd') }}" method="post">
             <div style="margin-bottom: 1rem;">
-                <label for="user_id">ユーザー</label>
-                <select id="user_id" name="user_id" required style="width: 100%; padding: 0.5rem; border-radius: 4px;">
-                    <option value="">選択してください</option>
+                <label for="user_input">ユーザー (名前または会員番号)</label>
+                <input type="text" id="user_input" list="user_list" class="form-control" autocomplete="off" placeholder="名前を入力..." style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
+                <datalist id="user_list">
                     {% for user in users %}
-                    <option value="{{ user.user_id }}">{{ user.name }} (ID: {{ user.user_id }})</option>
+                    <option value="{{ user.name }} [ID:{{ user.user_id }}]"></option>
                     {% endfor %}
-                </select>
+                </datalist>
+                <input type="hidden" id="user_id" name="user_id" required>
+                <div id="user_error" style="color: red; font-size: 0.8rem; display: none; margin-top: 0.25rem;">リストから選択してください</div>
             </div>
+            
             <div style="margin-bottom: 1rem;">
-                <label for="dvd_id">DVD</label>
-                <select id="dvd_id" name="dvd_id" required style="width: 100%; padding: 0.5rem; border-radius: 4px;">
-                    <option value="">選択してください</option>
+                <label for="dvd_input">DVD (タイトルまたはID)</label>
+                <input type="text" id="dvd_input" list="dvd_list" class="form-control" autocomplete="off" placeholder="DVDを検索..." style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
+                <datalist id="dvd_list">
                     {% for dvd in dvds %}
-                    <option value="{{ dvd.dvd_id }}" {% if request.args.get('dvd_id')|string == dvd.dvd_id|string %}selected{% endif %}>
-                        {{ dvd.title }} (ID: {{ dvd.dvd_id }})
-                    </option>
+                    <option value="{{ dvd.title }} [ID:{{ dvd.dvd_id }}]"></option>
                     {% endfor %}
-                </select>
+                </datalist>
+                <input type="hidden" id="dvd_id" name="dvd_id" value="{{ request.args.get('dvd_id', '') }}" required>
+                <div id="dvd_error" style="color: red; font-size: 0.8rem; display: none; margin-top: 0.25rem;">リストから選択してください</div>
             </div>
             <button type="submit" class="btn btn-primary" style="width: 100%;">貸出を実行</button>
         </form>
@@ -68,4 +71,63 @@
         {% endfor %}
     </tbody>
 </table>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function setupSearch(inputId, listId, hiddenId, errorId) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(listId);
+        const hidden = document.getElementById(hiddenId);
+        const error = document.getElementById(errorId);
+        
+        // オプションマップを作成 (Value -> ID)
+        const optionsMap = new Map();
+        // ID -> Value のマップも作成（初期表示用）
+        const idToValueMap = new Map();
+        
+        for (let option of list.options) {
+            const val = option.value;
+            // [ID:123] を末尾から探す
+            const match = val.match(/\[ID:(\d+)\]$/);
+            if (match) {
+                const id = match[1];
+                optionsMap.set(val, id);
+                idToValueMap.set(id, val);
+            }
+        }
+
+        // 初期値の設定
+        if (hidden.value && idToValueMap.has(hidden.value)) {
+            input.value = idToValueMap.get(hidden.value);
+        }
+
+        // 入力変更時の処理
+        input.addEventListener('change', function() {
+            const val = this.value;
+            if (optionsMap.has(val)) {
+                hidden.value = optionsMap.get(val);
+                error.style.display = 'none';
+                input.setCustomValidity(''); 
+            } else if (val === '') {
+                hidden.value = '';
+                input.setCustomValidity(''); 
+            } else {
+                // リストにない値
+                hidden.value = '';
+                error.style.display = 'block';
+                input.setCustomValidity('リストから選択してください');
+            }
+        });
+
+        // 入力中はエラーを一旦消す
+        input.addEventListener('input', function() {
+            error.style.display = 'none';
+            input.setCustomValidity('');
+        });
+    }
+
+    setupSearch('user_input', 'user_list', 'user_id', 'user_error');
+    setupSearch('dvd_input', 'dvd_list', 'dvd_id', 'dvd_error');
+});
+</script>
 {% endblock %}

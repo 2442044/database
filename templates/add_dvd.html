@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>新規DVD商品追加</h2>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <form action="{{ url_for('add_dvd') }}" method="post">
+        <div style="margin-bottom: 1rem;">
+            <label for="title" style="display: block; margin-bottom: 0.5rem;">タイトル <span style="color: red;">*</span></label>
+            <input type="text" id="title" name="title" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="genre_id" style="display: block; margin-bottom: 0.5rem;">ジャンル</label>
+            <select id="genre_id" name="genre_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="">選択してください</option>
+                {% for genre in genres %}
+                <option value="{{ genre.genre_id }}">{{ genre.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="release_date" style="display: block; margin-bottom: 0.5rem;">リリース日</label>
+            <input type="date" id="release_date" name="release_date" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="stock_count" style="display: block; margin-bottom: 0.5rem;">入荷数 (初期在庫) <span style="color: red;">*</span></label>
+            <input type="number" id="stock_count" name="stock_count" value="1" min="0" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="storage_location" style="display: block; margin-bottom: 0.5rem;">保管場所</label>
+            <input type="text" id="storage_location" name="storage_location" placeholder="例: A-1" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="description" style="display: block; margin-bottom: 0.5rem;">説明</label>
+            <textarea id="description" name="description" rows="4" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary">登録する</button>
+            <a href="{{ url_for('dvds') }}" class="btn btn-secondary" style="background-color: #95a5a6;">キャンセル</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

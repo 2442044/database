@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>DVD検索</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">DVD検索</h2>
+    <a href="{{ url_for('add_dvd') }}" class="btn btn-primary">＋ 新規商品追加</a>
+</div>
 
 <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
     <form action="{{ url_for('dvds') }}" method="get" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
@@ -38,7 +41,15 @@
         {% for dvd in dvds %}
         <tr>
             <td>{{ dvd.dvd_id }}</td>
-            <td>{{ dvd.title }}</td>
+            <td>
+                {% if dvd.stock_count > 0 %}
+                <a href="{{ url_for('rental_page', dvd_id=dvd.dvd_id) }}" style="text-decoration: none; color: inherit; font-weight: bold;">
+                    {{ dvd.title }}
+                </a>
+                {% else %}
+                {{ dvd.title }}
+                {% endif %}
+            </td>
             <td>{{ dvd.genre_name }}</td>
             <td>
                 {% if dvd.stock_count > 0 %}

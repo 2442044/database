@@ -67,6 +67,39 @@ def dvds():
     conn.close()
     return render_template('dvds.html', dvds=dvds, genres=genres, query=query, genre_id=genre_id)
 
+@app.route('/add_dvd', methods=['GET', 'POST'])
+def add_dvd():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        title = request.form['title']
+        genre_id = request.form['genre_id']
+        release_date = request.form['release_date']
+        stock_count = request.form['stock_count']
+        storage_location = request.form['storage_location']
+        description = request.form['description']
+        
+        # total_stock も stock_count と同じにする
+        total_stock = stock_count
+
+        try:
+            # 空文字の場合は None (NULL) にする
+            if not genre_id: genre_id = None
+            if not release_date: release_date = None
+
+            conn.execute('''
+                INSERT INTO dvds (title, genre_id, release_date, stock_count, total_stock, storage_location, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (title, genre_id, release_date, stock_count, total_stock, storage_location, description))
+            conn.commit()
+            flash('新規商品を登録しました。', 'success')
+            return redirect(url_for('dvds'))
+        except Exception as e:
+            flash(f'登録エラー: {str(e)}', 'error')
+            
+    genres = conn.execute('SELECT * FROM genres').fetchall()
+    conn.close()
+    return render_template('add_dvd.html', genres=genres)
+
 @app.route('/users', methods=['GET', 'POST'])
 def users():
     conn = get_db_connection()
