@@ -130,4 +130,4 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 システムの操作イメージについては、以下の動画をご覧ください。
 
-<video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
+[demo_video.webm](https://github.com/user-attachments/assets/13593176-a556-49be-bc9d-cd6ab357684b)
