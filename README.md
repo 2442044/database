@@ -130,4 +130,4 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 システムの操作イメージについては、以下の動画をご覧ください。
 
-![デモ動画](docs/demo_video.webm)
+<video src="docs/demo_video.webm" width="100%" controls></video>
