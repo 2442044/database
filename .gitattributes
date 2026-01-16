@@ -1,1 +1,1 @@
-docs/デモ動画.mp4 filter=lfs diff=lfs merge=lfs -text
+docs/demo_video.mp4 filter=lfs diff=lfs merge=lfs -text
