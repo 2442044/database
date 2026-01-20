@@ -55,6 +55,14 @@
 
 `BEGIN TRANSACTION` から `COMMIT` までの間にエラーが発生した場合は `ROLLBACK` することで、「記録は残ったが在庫が減っていない」といった矛盾が発生しないよう保証しています。
 
+**実装コード (dvd_rental_app/app.py 422-452行目付近):**
+```python
+conn.execute('BEGIN TRANSACTION')
+# ... INSERT into rentals ...
+# ... UPDATE dvds SET stock_count = stock_count - 1 ...
+conn.commit()
+```
+
 ---
 
 ### 4. AI検索機能の実装 (Vector DB & RAG)
@@ -75,6 +83,14 @@
 
 1.  ベクトル検索で候補を取得。
 2.  候補の中で、タイトルや説明文に検索キーワードが**直接含まれている作品のスコアをプログラム側で加算（ブースト）**。
+
+**実装コード (dvd_rental_app/app.py 165-171行目付近):**
+```python
+if query in title:
+    score += 2.0 # タイトル一致でブースト
+elif query in desc:
+    score += 1.0 # 説明文一致でブースト
+```
 
 この工夫により、「あいまい検索の柔軟性」と「キーワード検索の確実性」を両立させることができました。
 

@@ -8,7 +8,7 @@
 **Q1. なぜ Django ではなく Flask を採用したのですか？**
 **A.** マイクロフレームワークである Flask は、必要最小限の機能から構成されており、今回のような独自の Vector DB 実装を含むカスタムアプリケーションの開発において、設計の自由度が高いため採用しました。DB層を SQLAlchemy 等の ORM に強制されず、生の SQL や独自のベクトル検索ロジックを柔軟に組み込める点がこのプロジェクトに適しています。
 
-**実装コード (dvd_rental_app/app.py):**
+**実装コード (dvd_rental_app/app.py 8-11行目付近):**
 ```python
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
@@ -29,7 +29,7 @@ DATABASE = os.path.join(os.path.dirname(__file__), 'dvd_rental.db')
 **Q4. データベースの正規化はどのレベルまで行っていますか？**
 **A.** 第3正規形（3NF）まで厳密に適用しています。具体的には、`dvds` テーブルから `genres` を分離することで、ジャンル名への推移的関数従属を排除しました。これにより、ジャンル名の変更が一箇所で済み、データの不整合（更新時異常）を構造的に防いでいます。
 
-**実装コード (dvd_rental_app/init_db.py):**
+**実装コード (dvd_rental_app/init_db.py 11-16行目付近):**
 ```python
 # ジャンルを独立したテーブルとして定義 (正規化)
 cursor.execute('''
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS genres (
 **Q5. 外部キー制約 (Foreign Key) によるデータ整合性の担保について教えてください。**
 **A.** `dvds.genre_id`、`rentals.user_id`、`rentals.dvd_id` に外部キー制約を設定しています。これにより、存在しないジャンルの商品登録や、削除された会員によるレンタルといった「迷子データ」の発生をデータベースエンジンレベルで強制的に阻止しています。アプリケーションロジックに依存しない堅牢な設計です。
 
-**実装コード (dvd_rental_app/init_db.py):**
+**実装コード (dvd_rental_app/init_db.py 32-43行目付近):**
 ```python
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dvds (
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS dvds (
 **Q6. インデックス戦略について教えてください。**
 **A.** 主キーのクラスター化インデックスに加え、`users` テーブルの `member_code` と `phone` に `UNIQUE` 制約を付与することで、一意性検索のためのインデックスを作成しています。これにより、会員コード読み取りや電話番号検索といった頻出クエリの応答速度を O(log N) に保ち、実用的なパフォーマンスを確保しています。
 
-**実装コード (dvd_rental_app/init_db.py):**
+**実装コード (dvd_rental_app/init_db.py 19-29行目付近):**
 ```python
 # UNIQUE制約によるインデックス作成
 cursor.execute('''
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS users (
 **Q7. 貸出・返却処理におけるトランザクション制御の詳細は？**
 **A.** 貸出処理では、「レンタル履歴の作成 (`INSERT`)」と「在庫数の減算 (`UPDATE`)」という2つの更新処理を、明示的な `BEGIN TRANSACTION` ～ `COMMIT` ブロック内で実行しています。途中でエラーが発生した場合は即座に `ROLLBACK` されるため、在庫数と履歴の不整合（在庫はあるのに借りられない、等）は原理的に発生しません。
 
-**実装コード (dvd_rental_app/app.py):**
+**実装コード (dvd_rental_app/app.py 422-452行目付近):**
 ```python
 try:
     # トランザクション開始
@@ -121,7 +121,7 @@ except Exception as e:
 **Q15. ハイブリッド検索（ベクトル＋キーワード補正）のアルゴリズム詳細は？**
 **A.** まずベクトル検索でコサイン類似度が高い上位20件を候補として抽出します。その候補に対し、検索クエリがタイトルに含まれていればスコアに `+2.0`、説明文に含まれていれば `+1.0` を加算します。これにより、ベクトル検索の弱点である「固有名詞の完全一致」を補完し、ユーザーの明確な検索意図（例：「ジブリ」）を最優先する仕様としています。
 
-**実装コード (dvd_rental_app/app.py):**
+**実装コード (dvd_rental_app/app.py 165-171行目付近):**
 ```python
 # ハイブリッド検索ロジック
 if query in title:
