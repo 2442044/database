@@ -191,7 +191,7 @@ Pythonがインストールされている場合、以下の手順で起動可�
 ### #11 Vector DB (RAG), OTA
 - **Vector DB (RAG):** `dvds` テーブルの `description`（説明文）をベクトル化して保存することで、「泣ける映画」「家族で楽しめる」といった曖昧な要望に対する検索（セマンティック検索）の実装が可能です。
 - **OTA (Over-the-Air):** Docker を利用しているため、コンテナイメージを入れ替えるだけで、稼働中のシステムを最新状態へ OTA 更新できる環境になっています。
-=======
+
 
 https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
@@ -202,6 +202,6 @@ https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 システムの操作イメージについては、以下の動画をご覧ください。
 
 <<<<<<< HEAD
-<video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
 
->>>>>>> a0aa0986159295013ece0a4650e3c87d2b5e85b6
+<video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
+=======
