@@ -7,7 +7,7 @@ def init_db():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Genres table
+    # Genres table (#3 RDB Table)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS genres (
         genre_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,7 +15,7 @@ def init_db():
     )
     ''')
 
-    # Users table
+    # Users table (#3 RDB Table, #8 Tuning: UNIQUE constraint acts as an index)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,12 +28,12 @@ def init_db():
     )
     ''')
 
-    # DVDs table
+    # DVDs table (#3 RDB Table, #8 Normalization)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS dvds (
         dvd_id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
-        genre_id INTEGER,
+        genre_id INTEGER, -- #5 Foreign Key: 外部キーによるリレーション
         release_date DATE,
         stock_count INTEGER CHECK(stock_count >= 0),
         total_stock INTEGER DEFAULT 1,
@@ -43,7 +43,7 @@ def init_db():
     )
     ''')
 
-    # Rentals table
+    # Rentals table (#3 RDB Table: 多対多を解消する中間テーブル)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS rentals (
         rental_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,8 +52,8 @@ def init_db():
         rental_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         return_date DATETIME,
         status TEXT DEFAULT 'rented',
-        FOREIGN KEY (user_id) REFERENCES users (user_id),
-        FOREIGN KEY (dvd_id) REFERENCES dvds (dvd_id)
+        FOREIGN KEY (user_id) REFERENCES users (user_id), -- #5 Foreign Key
+        FOREIGN KEY (dvd_id) REFERENCES dvds (dvd_id)   -- #5 Foreign Key
     )
     ''')
 

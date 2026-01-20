@@ -28,8 +28,12 @@ def get_db_connection():
 
 @app.route('/')
 def index():
+    """
+    ダッシュボード画面を表示します。
+    #5 JOIN: 複数のテーブルを結合して必要な情報を取得します。
+    """
     conn = get_db_connection()
-    # 統計情報の取得
+    # 統計情報の取得 (#5 SubQuery的利用)
     user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
     dvd_count = conn.execute('SELECT COUNT(*) FROM dvds').fetchone()[0]
     active_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE return_date IS NULL').fetchone()[0]
@@ -53,7 +57,7 @@ def index():
         GROUP BY g.genre_id
     ''').fetchall()
 
-    # 最近のレンタル情報
+    # 最近のレンタル情報 (#5 JOIN)
     recent_rentals = conn.execute('''
         SELECT r.*, u.name as user_name, d.title as dvd_title 
         FROM rentals r
@@ -310,12 +314,16 @@ def delete_genre(genre_id):
 
 @app.route('/rent', methods=['POST'])
 def rent_dvd():
+    """
+    DVDの貸出処理を実行します。
+    #4 Transaction: 複数のDB更新を一つの単位として実行し、整合性を保ます。
+    """
     user_id = request.form['user_id']
     dvd_id = request.form['dvd_id']
     
     conn = get_db_connection()
     try:
-        # トランザクション開始
+        # トランザクション開始 (#4 Transaction)
         conn.execute('BEGIN TRANSACTION')
         
         # 在庫チェック

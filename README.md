@@ -131,3 +131,62 @@ Pythonがインストールされている場合、以下の手順で起動可�
 システムの操作イメージについては、以下の動画をご覧ください。
 
 <video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
+
+---
+
+## データベース講義内容の適用解説
+
+本システムは大学のデータベース講義で扱われた概念を実戦的に取り入れています。以下に各項目と、対応するソースコードの箇所を解説します。
+
+### #3 RDB Table (リレーショナルデータベースのテーブル構造)
+データは意味のある単位（エンティティ）ごとに「テーブル」として分割・整理されています。
+- **対応コード:** `dvd_rental_app/init_db.py` 内の `CREATE TABLE` 文
+  ```python
+  # 独立したエンティティごとにテーブルを定義
+  cursor.execute('CREATE TABLE IF NOT EXISTS genres (...)')
+  cursor.execute('CREATE TABLE IF NOT EXISTS users (...)')
+  cursor.execute('CREATE TABLE IF NOT EXISTS dvds (...)')
+  cursor.execute('CREATE TABLE IF NOT EXISTS rentals (...)')
+  ```
+
+### #4 SQL, Transaction (SQL操作とトランザクション)
+データの整合性を保つため、複数の更新処理を一つの不可分な単位（トランザクション）として扱っています。
+- **対応コード:** `dvd_rental_app/app.py` の `rent_dvd()` 関数
+  ```python
+  # トランザクションの開始
+  conn.execute('BEGIN TRANSACTION')
+  # 1. レンタル情報の記録 (INSERT)
+  conn.execute('INSERT INTO rentals (user_id, dvd_id) VALUES (?, ?)', (user_id, dvd_id))
+  # 2. 在庫数の減算 (UPDATE)
+  conn.execute('UPDATE dvds SET stock_count = stock_count - 1 WHERE dvd_id = ?', (dvd_id,))
+  # 全て成功すれば確定
+  conn.commit()
+  ```
+
+### #5 Foreign Key, JOIN, SubQuery (外部キーと結合)
+テーブル間の関連付けと、それらを統合したデータ取得を行っています。
+- **対応コード (外部キー):** `dvd_rental_app/init_db.py`
+  ```sql
+  FOREIGN KEY (genre_id) REFERENCES genres (genre_id) -- 参照整合性の確保
+  ```
+- **対応コード (結合):** `dvd_rental_app/app.py` の `index()` 関数
+  ```sql
+  -- rentals, users, dvds の3テーブルを結合して表示用データを取得
+  SELECT r.*, u.name as user_name, d.title as dvd_title 
+  FROM rentals r
+  JOIN users u ON r.user_id = u.user_id
+  JOIN dvds d ON r.dvd_id = d.dvd_id
+  ```
+
+### #8 正規化, DB Tuning
+データの重複を排除する「正規化」と、検索を高速化する「インデックス」を考慮しています。
+- **正規化:** ジャンル名を `dvds` テーブルに直接持たせず `genres` テーブルに切り出すことで、ジャンル名変更時の更新負荷を最小限に抑えています（第3正規形）。
+- **DB Tuning:** `dvd_rental_app/init_db.py` にて `member_code` や `phone` に `UNIQUE` 制約を付与し、自動的に高速な検索用インデックスが作成されるようにしています。
+
+### #10 分散DB, 列指向DB (システムへの適用可能性)
+- **分散DB:** 現在は SQLite ですが、利用者が増えた場合に PostgreSQL などの分散型 RDB へ移行することで、負荷分散と可用性向上が図れる設計になっています。
+- **列指向DB:** 貸出履歴を数年分蓄積し、マーケティング分析（どの層がどのジャンルを好むか等）を行う際は、BigQueryのような列指向DBへデータを同期して分析する構成が有効です。
+
+### #11 Vector DB (RAG), OTA
+- **Vector DB (RAG):** `dvds` テーブルの `description`（説明文）をベクトル化して保存することで、「泣ける映画」「家族で楽しめる」といった曖昧な要望に対する検索（セマンティック検索）の実装が可能です。
+- **OTA (Over-the-Air):** Docker を利用しているため、コンテナイメージを入れ替えるだけで、稼働中のシステムを最新状態へ OTA 更新できる環境になっています。
