@@ -132,14 +132,6 @@ Pythonがインストールされている場合、以下の手順で起動可�
    - `user_id` を通じて **users** テーブルと、`dvd_id` を通じて **dvds** テーブルと紐付いています（多対多の解消）。
    - 貸出日、返却予定日（または返却日）、現在のステータス（貸出中・返却済）を保持します。
 
----
-
-## デモ動画
-
-システムの操作イメージについては、以下の動画をご覧ください。
-<video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
-<<<<<<< HEAD
-
 
 ---
 
@@ -203,5 +195,13 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
+---
+
+## デモ動画
+
+システムの操作イメージについては、以下の動画をご覧ください。
+
+<<<<<<< HEAD
+<video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
 
 >>>>>>> a0aa0986159295013ece0a4650e3c87d2b5e85b6
