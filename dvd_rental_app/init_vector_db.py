@@ -3,24 +3,30 @@ import os
 from vector_search import VectorSearch
 
 # Database paths
+# データベースファイルのパス設定
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SQLITE_DB_PATH = os.path.join(BASE_DIR, 'dvd_rental.db')
-# We store embeddings in the same DB file or a separate one? 
-# vector_search.py allows separate. Let's keep it separate to not mess with existing schema easily.
 VECTOR_DB_PATH = os.path.join(BASE_DIR, 'dvd_vector.db')
 
 def get_db_connection():
+    """
+    RDB (dvd_rental.db) への接続を取得します。
+    """
     conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_vector_db():
+    """
+    ベクトルデータベースを初期化し、既存のDVDデータを登録します。
+    RDBからDVD情報を取得し、整形したテキストをベクトル化してVector DBに保存します。
+    """
     print("Initializing Vector Search DB...")
     
-    # 1. Initialize Vector Search
+    # 1. Vector Search機能（DB含む）の初期化
     vs = VectorSearch(VECTOR_DB_PATH)
     
-    # 2. Fetch Data from SQLite
+    # 2. SQLite (RDB) からDVDデータとジャンルを取得
     conn = get_db_connection()
     dvds = conn.execute('''
         SELECT d.dvd_id, d.title, d.description, g.name as genre_name 
@@ -33,15 +39,15 @@ def init_vector_db():
     
     count = 0
     for dvd in dvds:
-        # Skip if description is empty
+        # 説明文がない場合はスキップ
         if not dvd['description']:
             continue
             
-        # Enrich text with Title and Genre to improve search accuracy
-        # Natural language format might work better for semantic search
+        # 検索精度向上のため、タイトル・ジャンル・説明文を自然言語形式で結合してベクトル化します
         enriched_text = f"{dvd['title']}。ジャンルは{dvd['genre_name']}。{dvd['description']}"
             
         print(f"Vectorizing DVD {dvd['dvd_id']}: {dvd['title']}...")
+        # ベクトル化して保存
         vs.add_dvd(dvd['dvd_id'], enriched_text)
         count += 1
     
