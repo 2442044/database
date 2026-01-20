@@ -157,6 +157,43 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 ---
 
+## ベクトル検索システムの設計
+
+本システムでは、RDB (`dvd_rental.db`) とは独立した SQLite データベース (`dvd_vector.db`) を使用してベクトルデータを管理しています。
+
+### アーキテクチャ
+
+RDBで管理されるDVDのメタデータ（タイトル、ジャンル、説明文）を結合・整形し、Embeddingモデル (`sentence-transformers`) を介してベクトル化します。生成されたベクトルは、DVDのIDと紐づけてベクトルストアに保存されます。
+
+```mermaid
+graph TD
+    User[ユーザー] -->|検索クエリ| App[Flask アプリ]
+    App -->|キーワード検索| RDB[(dvd_rental.db)]
+    App -->|ベクトル検索| VectorDB[(dvd_vector.db)]
+    
+    subgraph "データ登録フロー"
+        RDB -->|データ抽出| Vectorizer[ベクトル化処理]
+        Vectorizer -->|Embedding| VectorDB
+    end
+```
+
+### ベクトルDB設計 (ER図)
+
+ベクトルDBは、DVD IDをキーとして高次元ベクトル（BLOBデータ）を格納するシンプルな構造を採用しています。
+
+```mermaid
+erDiagram
+    dvd_embeddings {
+        INTEGER dvd_id PK "DVD ID (RDBと共通)"
+        BLOB embedding "ベクトルデータ (384次元)"
+    }
+```
+
+- **dvd_id**: `dvd_rental.db` の `dvds` テーブルの `dvd_id` と 1:1 で対応します。
+- **embedding**: `paraphrase-multilingual-MiniLM-L12-v2` モデルによって生成された384次元の浮動小数点数配列を、バイナリ形式 (BLOB) で保存しています。
+
+---
+
 ## デモ動画
 
 システムの操作イメージについては、以下の動画をご覧ください。
