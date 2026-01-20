@@ -137,9 +137,9 @@ Pythonがインストールされている場合、以下の手順で起動可�
 ## デモ動画
 
 システムの操作イメージについては、以下の動画をご覧ください。
-
-<<<<<<< HEAD
 <video src="https://github.com/2442044/database/blob/main/docs/demo_video.webm?raw=true" width="600" controls></video>
+<<<<<<< HEAD
+
 
 ---
 
