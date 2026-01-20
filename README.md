@@ -218,7 +218,7 @@ https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
 ### #3 RDB Table (リレーショナルデータベースのテーブル構造)
 データは意味のある単位（エンティティ）ごとに「テーブル」として分割・整理されています。
-- **対応コード:** `dvd_rental_app/init_db.py` (11-56行目付近) 内の `CREATE TABLE` 文
+- **対応コード:** `dvd_rental_app/init_db.py` 内の `CREATE TABLE` 文
   ```python
   # 独立したエンティティごとにテーブルを定義
   cursor.execute('CREATE TABLE IF NOT EXISTS genres (...)')
@@ -229,7 +229,7 @@ https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
 ### #4 SQL, Transaction (SQL操作とトランザクション)
 データの整合性を保つため、複数の更新処理を一つの不可分な単位（トランザクション）として扱っています。
-- **対応コード:** `dvd_rental_app/app.py` (422-452行目付近) の `rent_dvd()` 関数
+- **対応コード:** `dvd_rental_app/app.py` の `rent_dvd()` 関数
   ```python
   # トランザクションの開始
   conn.execute('BEGIN TRANSACTION')
@@ -243,11 +243,11 @@ https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
 ### #5 Foreign Key, JOIN, SubQuery (外部キーと結合)
 テーブル間の関連付けと、それらを統合したデータ取得を行っています。
-- **対応コード (外部キー):** `dvd_rental_app/init_db.py` (43行目付近)
+- **対応コード (外部キー):** `dvd_rental_app/init_db.py`
   ```sql
   FOREIGN KEY (genre_id) REFERENCES genres (genre_id) -- 参照整合性の確保
   ```
-- **対応コード (結合):** `dvd_rental_app/app.py` (93-98行目付近) の `index()` 関数
+- **対応コード (結合):** `dvd_rental_app/app.py` の `index()` 関数
   ```sql
   -- rentals, users, dvds の3テーブルを結合して表示用データを取得
   SELECT r.*, u.name as user_name, d.title as dvd_title 
