@@ -114,13 +114,13 @@ def dvds():
     dvds = []
     
     if query and search_type == 'semantic':
-        # AI (ベクトル) 検索
-        results = vector_search.search(query, limit=10)
+        # AI (ベクトル) 検索 + キーワード補正 (Hybrid Search)
+        results = vector_search.search(query, limit=20) # 多めに取得
+        
         if results:
-            dvd_ids = [r[0] for r in results]
-            
-            # IDに対応するDVD詳細を取得
+            dvd_ids = [r['dvd_id'] for r in results]
             placeholders = ','.join('?' * len(dvd_ids))
+            
             sql = f'''
                 SELECT d.*, g.name as genre_name 
                 FROM dvds d 
@@ -128,16 +128,36 @@ def dvds():
                 WHERE d.dvd_id IN ({placeholders})
             '''
             params = list(dvd_ids)
-            
             if genre_id:
                 sql += ' AND d.genre_id = ?'
                 params.append(genre_id)
                 
             rows = conn.execute(sql, params).fetchall()
             
-            # 検索結果のスコア順（ベクトル類似度順）に並び替え
-            rows_dict = {row['dvd_id']: row for row in rows}
-            dvds = [rows_dict[did] for did in dvd_ids if did in rows_dict]
+            # ハイブリッドスコアの計算
+            # ベクトルスコアに、キーワードが含まれている場合のボーナスを加算
+            scored_dvds = []
+            vector_scores = {r['dvd_id']: r['score'] for r in results}
+            
+            for row in rows:
+                did = row['dvd_id']
+                score = vector_scores.get(did, 0)
+                
+                # キーワードが含まれている場合は大幅に加点（ブースト）
+                # タイトル一致は特に高く
+                title = row['title']
+                desc = row['description'] or ""
+                
+                if query in title:
+                    score += 2.0 # 強力なブースト
+                elif query in desc:
+                    score += 1.0 # 中程度のブースト
+                
+                scored_dvds.append({'row': row, 'score': score})
+            
+            # 最終的なスコアでソート
+            scored_dvds.sort(key=lambda x: x['score'], reverse=True)
+            dvds = [item['row'] for item in scored_dvds[:10]]
         else:
             dvds = []
     else:

@@ -52,14 +52,11 @@ class VectorSearch:
         rows = cursor.fetchall()
         conn.close()
         
+        # Calculate scores
         results = []
         for dvd_id, blob in rows:
-            # Convert bytes back to numpy array
             doc_embedding = np.frombuffer(blob, dtype=np.float32)
             
-            # Calculate cosine similarity
-            # Cosine Similarity = (A . B) / (||A|| * ||B||)
-            # Add simple check for zero norm to avoid division by zero
             norm_q = np.linalg.norm(query_embedding)
             norm_d = np.linalg.norm(doc_embedding)
             
@@ -68,8 +65,8 @@ class VectorSearch:
             else:
                 score = np.dot(query_embedding, doc_embedding) / (norm_q * norm_d)
                 
-            results.append((dvd_id, score))
+            results.append({'dvd_id': dvd_id, 'score': float(score)})
             
-        # Sort by score descending
-        results.sort(key=lambda x: x[1], reverse=True)
+        # Sort and limit
+        results.sort(key=lambda x: x['score'], reverse=True)
         return results[:limit]
