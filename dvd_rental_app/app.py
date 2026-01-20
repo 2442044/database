@@ -3,53 +3,68 @@ import sqlite3
 import datetime
 import os
 
+# Flaskアプリケーションの初期化
 app = Flask(__name__)
+# セッションやフラッシュメッセージ（通知）の暗号化に使用する秘密鍵
 app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey')
 
+# データベースファイルのパス設定
 DATABASE = os.path.join(os.path.dirname(__file__), 'dvd_rental.db')
 
 @app.template_filter('is_overdue')
 def is_overdue(rental_date_str):
+    """
+    HTMLテンプレート内で使用するカスタムフィルタ。
+    貸出日から7日以上経過しているかを判定し、期限切れならTrueを返します。
+    """
     if not rental_date_str:
         return False
     try:
-        # rental_date_str は 'YYYY-MM-DD HH:MM:SS' 形式を想定
+        # 文字列形式の時刻をPythonのdatetimeオブジェクトに変換
         rental_date = datetime.datetime.strptime(rental_date_str, '%Y-%m-%d %H:%M:%S')
-        # 期限は7日後
+        # 貸出期限を7日後に設定
         due_date = rental_date + datetime.timedelta(days=7)
+        # 現在時刻が期限を過ぎているかチェック
         return datetime.datetime.now() > due_date
     except ValueError:
         return False
 
 def get_db_connection():
+    """
+    データベースへの接続を確立し、列名でデータにアクセスできるように設定します。
+    """
     conn = sqlite3.connect(DATABASE)
+    # 取得した結果を辞書形式（conn.execute(...).fetchone()['column_name']）で扱えるようにする
     conn.row_factory = sqlite3.Row
     return conn
 
 @app.route('/')
 def index():
     """
-    ダッシュボード画面を表示します。
+    ダッシュボード画面（ホームページ）を表示します。
     #5 JOIN: 複数のテーブルを結合して必要な情報を取得します。
     """
     conn = get_db_connection()
-    # 統計情報の取得 (#5 SubQuery的利用)
+    
+    # --- 統計情報の取得 (#5 SubQuery的利用) ---
+    # 各テーブルのレコード数をカウントして概要を把握します
     user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
     dvd_count = conn.execute('SELECT COUNT(*) FROM dvds').fetchone()[0]
+    # return_date IS NULL は「まだ返却されていない」ことを意味します
     active_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE return_date IS NULL').fetchone()[0]
     
-    # 本日の貸出数
+    # 本日の貸出数を取得（SQLiteのdate関数で日付部分のみ比較）
     today = datetime.date.today().strftime('%Y-%m-%d')
     today_rentals = conn.execute('SELECT COUNT(*) FROM rentals WHERE date(rental_date) = ?', (today,)).fetchone()[0]
 
-    # 期限切れの貸出数（7日以上）
+    # 期限切れの貸出数（julianday関数で日数の差分が7日を超えるものを抽出）
     overdue_rentals = conn.execute('''
         SELECT COUNT(*) FROM rentals 
         WHERE return_date IS NULL 
         AND julianday('now') - julianday(rental_date) > 7
     ''').fetchone()[0]
 
-    # ジャンルごとの在庫
+    # ジャンルごとの在庫統計（LEFT JOINでDVDが0件のジャンルも表示）
     genre_stats = conn.execute('''
         SELECT g.name, COUNT(d.dvd_id) as count, SUM(d.stock_count) as total_stock
         FROM genres g
@@ -57,7 +72,8 @@ def index():
         GROUP BY g.genre_id
     ''').fetchall()
 
-    # 最近のレンタル情報 (#5 JOIN)
+    # 最近のレンタル情報5件 (#5 JOIN)
+    # rentalsテーブルにusers(名前)とdvds(タイトル)を紐付けて取得
     recent_rentals = conn.execute('''
         SELECT r.*, u.name as user_name, d.title as dvd_title 
         FROM rentals r
@@ -67,6 +83,7 @@ def index():
     ''').fetchall()
     
     conn.close()
+    # 現在時刻をフォーマットして表示用に準備
     now = datetime.datetime.now().strftime('%Y年%m月%d日 %H:%M')
     return render_template('index.html', 
                          user_count=user_count, 
@@ -80,31 +97,44 @@ def index():
 
 @app.route('/dvds')
 def dvds():
+    """
+    DVD一覧を表示し、検索機能を提供します。
+    """
+    # 検索キーワードとジャンルIDをURLパラメータから取得
     query = request.args.get('query', '')
     genre_id = request.args.get('genre_id', '')
     
     conn = get_db_connection()
+    # 基本のSQL文（LEFT JOINでジャンル名も取得）
     sql = '''
         SELECT d.*, g.name as genre_name 
         FROM dvds d 
         LEFT JOIN genres g ON d.genre_id = g.genre_id
         WHERE d.title LIKE ?
     '''
+    # 曖昧検索のためにキーワードを % で囲む
     params = [f'%{query}%']
     
+    # ジャンルが指定されている場合は検索条件を追加
     if genre_id:
         sql += ' AND d.genre_id = ?'
         params.append(genre_id)
         
     dvds = conn.execute(sql, params).fetchall()
+    # ジャンル選択プルダウン用のデータを取得
     genres = conn.execute('SELECT * FROM genres').fetchall()
     conn.close()
     return render_template('dvds.html', dvds=dvds, genres=genres, query=query, genre_id=genre_id)
 
 @app.route('/add_dvd', methods=['GET', 'POST'])
 def add_dvd():
+    """
+    新規DVDを登録します。
+    POSTリクエスト時はフォームの内容をDBに保存します。
+    """
     conn = get_db_connection()
     if request.method == 'POST':
+        # フォーム入力を取得
         title = request.form['title']
         genre_id = request.form['genre_id']
         release_date = request.form['release_date']
@@ -112,11 +142,11 @@ def add_dvd():
         storage_location = request.form['storage_location']
         description = request.form['description']
         
-        # total_stock も stock_count と同じにする
+        # 初期登録時は、現在在庫と総在庫を同じにする
         total_stock = stock_count
 
         try:
-            # 空文字の場合は None (NULL) にする
+            # 入力がない場合はNULL値（None）として扱う
             if not genre_id: genre_id = None
             if not release_date: release_date = None
 
@@ -128,16 +158,22 @@ def add_dvd():
             flash('新規商品を登録しました。', 'success')
             return redirect(url_for('dvds'))
         except Exception as e:
+            # エラー時はロールバック（SQLiteは自動ですが明示的に例外処理）して通知
             flash(f'登録エラー: {str(e)}', 'error')
             
+    # ジャンル一覧を取得して登録フォームを表示
     genres = conn.execute('SELECT * FROM genres').fetchall()
     conn.close()
     return render_template('add_dvd.html', genres=genres)
 
 @app.route('/edit_dvd/<int:dvd_id>', methods=['GET', 'POST'])
 def edit_dvd(dvd_id):
+    """
+    既存DVDの情報を編集します。
+    """
     conn = get_db_connection()
     if request.method == 'POST':
+        # 更新する情報をフォームから取得
         title = request.form['title']
         genre_id = request.form['genre_id']
         release_date = request.form['release_date']
@@ -149,6 +185,7 @@ def edit_dvd(dvd_id):
             if not genre_id: genre_id = None
             if not release_date: release_date = None
 
+            # 指定されたdvd_idのレコードを更新
             conn.execute('''
                 UPDATE dvds 
                 SET title = ?, genre_id = ?, release_date = ?, stock_count = ?, storage_location = ?, description = ?
@@ -160,6 +197,7 @@ def edit_dvd(dvd_id):
         except Exception as e:
             flash(f'更新エラー: {str(e)}', 'error')
     
+    # 編集対象のDVDデータを取得
     dvd = conn.execute('SELECT * FROM dvds WHERE dvd_id = ?', (dvd_id,)).fetchone()
     genres = conn.execute('SELECT * FROM genres').fetchall()
     conn.close()
@@ -172,9 +210,12 @@ def edit_dvd(dvd_id):
 
 @app.route('/delete_dvd/<int:dvd_id>', methods=['POST'])
 def delete_dvd(dvd_id):
+    """
+    DVDを削除します。ただし、一度でもレンタルされた履歴がある場合は削除不可。
+    """
     conn = get_db_connection()
     try:
-        # レンタル履歴のチェック
+        # レンタル履歴が存在するかチェック
         rental_count = conn.execute('SELECT COUNT(*) FROM rentals WHERE dvd_id = ?', (dvd_id,)).fetchone()[0]
         if rental_count > 0:
              flash('レンタル履歴があるDVDは削除できません。', 'error')
@@ -190,14 +231,19 @@ def delete_dvd(dvd_id):
 
 @app.route('/users', methods=['GET', 'POST'])
 def users():
+    """
+    ユーザー一覧表示と新規登録。
+    """
     conn = get_db_connection()
     if request.method == 'POST':
+        # フォーム入力を取得
         member_code = request.form['member_code']
         name = request.form['name']
         address = request.form['address']
         phone = request.form['phone']
         birth_date = request.form['birth_date']
         try:
+            # データベースへ挿入
             conn.execute('INSERT INTO users (name, address, phone, birth_date, member_code) VALUES (?, ?, ?, ?, ?)',
                          (name, address, phone, birth_date, member_code))
             conn.commit()
@@ -206,12 +252,16 @@ def users():
             flash(f'登録エラー: {str(e)}', 'error')
         return redirect(url_for('users'))
 
+    # 最新順にユーザーを表示
     users = conn.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
     conn.close()
     return render_template('users.html', users=users)
 
 @app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
 def edit_user(user_id):
+    """
+    ユーザー情報の編集。
+    """
     conn = get_db_connection()
     if request.method == 'POST':
         member_code = request.form['member_code']
@@ -243,9 +293,12 @@ def edit_user(user_id):
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
+    """
+    ユーザーを削除します。ただし、レンタル中や過去の履歴がある場合は削除不可。
+    """
     conn = get_db_connection()
     try:
-        # レンタル履歴のチェック
+        # 履歴チェック
         rental_count = conn.execute('SELECT COUNT(*) FROM rentals WHERE user_id = ?', (user_id,)).fetchone()[0]
         if rental_count > 0:
              flash('レンタル履歴があるユーザーは削除できません。', 'error')
@@ -261,11 +314,16 @@ def delete_user(user_id):
 
 @app.route('/rental')
 def rental_page():
+    """
+    貸出処理と貸出状況の確認ページ。
+    """
     conn = get_db_connection()
+    # プルダウン選択用のデータを取得
     users = conn.execute('SELECT user_id, name, member_code FROM users').fetchall()
-    # 在庫があるDVDのみ表示
+    # 在庫があるDVDのみを表示対象とする
     dvds = conn.execute('SELECT dvd_id, title FROM dvds WHERE stock_count > 0').fetchall()
-    # 貸出中のもの
+    
+    # 現在貸出中（未返却）のレコードを最新順に取得
     active_rentals = conn.execute('''
         SELECT r.*, u.name as user_name, d.title as dvd_title 
         FROM rentals r
@@ -279,6 +337,9 @@ def rental_page():
 
 @app.route('/genres', methods=['GET', 'POST'])
 def genres():
+    """
+    ジャンルの管理（追加と一覧）。
+    """
     conn = get_db_connection()
     if request.method == 'POST':
         name = request.form['name']
@@ -296,9 +357,12 @@ def genres():
 
 @app.route('/delete_genre/<int:genre_id>', methods=['POST'])
 def delete_genre(genre_id):
+    """
+    ジャンルを削除。ただし、そのジャンルに属するDVDがある場合は削除不可。
+    """
     conn = get_db_connection()
     try:
-        # ジャンルがDVDで使用されているかチェック
+        # 使用状況チェック
         dvd_count = conn.execute('SELECT COUNT(*) FROM dvds WHERE genre_id = ?', (genre_id,)).fetchone()[0]
         if dvd_count > 0:
             flash('このジャンルを使用しているDVDがあるため削除できません。', 'error')
@@ -326,14 +390,14 @@ def rent_dvd():
         # トランザクション開始 (#4 Transaction)
         conn.execute('BEGIN TRANSACTION')
         
-        # 在庫チェック
+        # 在庫チェック（同時に他者が借りて在庫切れになるのを防ぐため、処理内でも確認）
         dvd = conn.execute('SELECT stock_count FROM dvds WHERE dvd_id = ?', (dvd_id,)).fetchone()
         if not dvd or dvd['stock_count'] <= 0:
             flash('在庫がありません。', 'error')
             conn.rollback()
             return redirect(url_for('index'))
 
-        # 既にレンタル中かチェック
+        # 重複貸出チェック（同じ人が同じものを現在借りていないか）
         existing_rental = conn.execute('''
             SELECT * FROM rentals 
             WHERE user_id = ? AND dvd_id = ? AND return_date IS NULL
@@ -344,15 +408,17 @@ def rent_dvd():
             conn.rollback()
             return redirect(url_for('index'))
         
-        # rentalsに追加
+        # rentalsテーブルに履歴を挿入
         conn.execute('INSERT INTO rentals (user_id, dvd_id) VALUES (?, ?)', (user_id, dvd_id))
         
-        # 在庫を減らす
+        # dvdsテーブルの在庫数を1つ減らす
         conn.execute('UPDATE dvds SET stock_count = stock_count - 1 WHERE dvd_id = ?', (dvd_id,))
         
+        # すべて成功したらコミット（確定）
         conn.commit()
         flash('レンタル処理が完了しました。', 'success')
     except Exception as e:
+        # 途中で失敗した場合はロールバック（最初からなかったことにする）
         conn.rollback()
         flash(f'エラーが発生しました: {str(e)}', 'error')
     finally:
@@ -362,16 +428,20 @@ def rent_dvd():
 
 @app.route('/return/<int:rental_id>')
 def return_dvd(rental_id):
+    """
+    DVDの返却処理を実行します。
+    """
     conn = get_db_connection()
     try:
         conn.execute('BEGIN TRANSACTION')
         
+        # 対象のレンタル情報を特定
         rental = conn.execute('SELECT dvd_id FROM rentals WHERE rental_id = ?', (rental_id,)).fetchone()
         if rental:
             dvd_id = rental['dvd_id']
-            # 返却日更新
+            # 返却日を現在時刻に更新し、ステータスを変更
             conn.execute('UPDATE rentals SET return_date = CURRENT_TIMESTAMP, status = "returned" WHERE rental_id = ?', (rental_id,))
-            # 在庫を戻す
+            # DVDの在庫数を1つ戻す
             conn.execute('UPDATE dvds SET stock_count = stock_count + 1 WHERE dvd_id = ?', (dvd_id,))
             
             conn.commit()
@@ -385,5 +455,6 @@ def return_dvd(rental_id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # host='0.0.0.0' を指定することで、同じネットワーク内の他のPCからもアクセス可能になります
+    # Flaskアプリの起動
+    # host='0.0.0.0' にすることで、同じWi-Fi内のスマホなどからもアクセス可能になります
     app.run(debug=True, host='0.0.0.0', port=5000)
