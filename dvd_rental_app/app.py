@@ -196,7 +196,15 @@ def add_dvd():
             # Vector DBにも追加
             if description:
                 try:
-                    vector_search.add_dvd(new_dvd_id, description)
+                    # ジャンル名を取得
+                    genre_name = ""
+                    if genre_id:
+                        genre_row = conn.execute('SELECT name FROM genres WHERE genre_id = ?', (genre_id,)).fetchone()
+                        if genre_row:
+                            genre_name = genre_row['name']
+                    
+                    enriched_text = f"{title}。ジャンルは{genre_name}。{description}"
+                    vector_search.add_dvd(new_dvd_id, enriched_text)
                 except Exception as ve:
                     print(f"Vector DB Error: {ve}")
 
@@ -241,7 +249,15 @@ def edit_dvd(dvd_id):
             # Vector DBも更新
             if description:
                 try:
-                    vector_search.add_dvd(dvd_id, description)
+                    # ジャンル名を取得
+                    genre_name = ""
+                    if genre_id:
+                        genre_row = conn.execute('SELECT name FROM genres WHERE genre_id = ?', (genre_id,)).fetchone()
+                        if genre_row:
+                            genre_name = genre_row['name']
+                            
+                    enriched_text = f"{title}。ジャンルは{genre_name}。{description}"
+                    vector_search.add_dvd(dvd_id, enriched_text)
                 except Exception as ve:
                     print(f"Vector DB Error: {ve}")
 

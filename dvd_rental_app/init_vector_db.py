@@ -22,7 +22,11 @@ def init_vector_db():
     
     # 2. Fetch Data from SQLite
     conn = get_db_connection()
-    dvds = conn.execute('SELECT dvd_id, title, description FROM dvds').fetchall()
+    dvds = conn.execute('''
+        SELECT d.dvd_id, d.title, d.description, g.name as genre_name 
+        FROM dvds d
+        LEFT JOIN genres g ON d.genre_id = g.genre_id
+    ''').fetchall()
     conn.close()
     
     print(f"Found {len(dvds)} DVDs in SQLite.")
@@ -33,8 +37,12 @@ def init_vector_db():
         if not dvd['description']:
             continue
             
+        # Enrich text with Title and Genre to improve search accuracy
+        # Natural language format might work better for semantic search
+        enriched_text = f"{dvd['title']}。ジャンルは{dvd['genre_name']}。{dvd['description']}"
+            
         print(f"Vectorizing DVD {dvd['dvd_id']}: {dvd['title']}...")
-        vs.add_dvd(dvd['dvd_id'], dvd['description'])
+        vs.add_dvd(dvd['dvd_id'], enriched_text)
         count += 1
     
     print(f"Successfully vectorized and stored {count} DVD descriptions.")
