@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import datetime
 import os
+from vector_search import VectorSearch
 
 # Flaskアプリケーションの初期化
 app = Flask(__name__)
@@ -10,6 +11,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey')
 
 # データベースファイルのパス設定
 DATABASE = os.path.join(os.path.dirname(__file__), 'dvd_rental.db')
+VECTOR_DB_PATH = os.path.join(os.path.dirname(__file__), 'dvd_vector.db')
+
+# VectorSearchの初期化
+vector_search = VectorSearch(VECTOR_DB_PATH)
 
 @app.template_filter('is_overdue')
 def is_overdue(rental_date_str):
@@ -103,28 +108,59 @@ def dvds():
     # 検索キーワードとジャンルIDをURLパラメータから取得
     query = request.args.get('query', '')
     genre_id = request.args.get('genre_id', '')
+    search_type = request.args.get('search_type', 'keyword')
     
     conn = get_db_connection()
-    # 基本のSQL文（LEFT JOINでジャンル名も取得）
-    sql = '''
-        SELECT d.*, g.name as genre_name 
-        FROM dvds d 
-        LEFT JOIN genres g ON d.genre_id = g.genre_id
-        WHERE d.title LIKE ?
-    '''
-    # 曖昧検索のためにキーワードを % で囲む
-    params = [f'%{query}%']
+    dvds = []
     
-    # ジャンルが指定されている場合は検索条件を追加
-    if genre_id:
-        sql += ' AND d.genre_id = ?'
-        params.append(genre_id)
+    if query and search_type == 'semantic':
+        # AI (ベクトル) 検索
+        results = vector_search.search(query, limit=10)
+        if results:
+            dvd_ids = [r[0] for r in results]
+            
+            # IDに対応するDVD詳細を取得
+            placeholders = ','.join('?' * len(dvd_ids))
+            sql = f'''
+                SELECT d.*, g.name as genre_name 
+                FROM dvds d 
+                LEFT JOIN genres g ON d.genre_id = g.genre_id
+                WHERE d.dvd_id IN ({placeholders})
+            '''
+            params = list(dvd_ids)
+            
+            if genre_id:
+                sql += ' AND d.genre_id = ?'
+                params.append(genre_id)
+                
+            rows = conn.execute(sql, params).fetchall()
+            
+            # 検索結果のスコア順（ベクトル類似度順）に並び替え
+            rows_dict = {row['dvd_id']: row for row in rows}
+            dvds = [rows_dict[did] for did in dvd_ids if did in rows_dict]
+        else:
+            dvds = []
+    else:
+        # 通常のキーワード検索（タイトル一致）
+        sql = '''
+            SELECT d.*, g.name as genre_name 
+            FROM dvds d 
+            LEFT JOIN genres g ON d.genre_id = g.genre_id
+            WHERE d.title LIKE ?
+        '''
+        params = [f'%{query}%']
         
-    dvds = conn.execute(sql, params).fetchall()
+        if genre_id:
+            sql += ' AND d.genre_id = ?'
+            params.append(genre_id)
+            
+        dvds = conn.execute(sql, params).fetchall()
+
     # ジャンル選択プルダウン用のデータを取得
     genres = conn.execute('SELECT * FROM genres').fetchall()
     conn.close()
-    return render_template('dvds.html', dvds=dvds, genres=genres, query=query, genre_id=genre_id)
+    
+    return render_template('dvds.html', dvds=dvds, genres=genres, query=query, genre_id=genre_id, search_type=search_type)
 
 @app.route('/add_dvd', methods=['GET', 'POST'])
 def add_dvd():
@@ -150,11 +186,20 @@ def add_dvd():
             if not genre_id: genre_id = None
             if not release_date: release_date = None
 
-            conn.execute('''
+            cursor = conn.execute('''
                 INSERT INTO dvds (title, genre_id, release_date, stock_count, total_stock, storage_location, description)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (title, genre_id, release_date, stock_count, total_stock, storage_location, description))
+            new_dvd_id = cursor.lastrowid
             conn.commit()
+            
+            # Vector DBにも追加
+            if description:
+                try:
+                    vector_search.add_dvd(new_dvd_id, description)
+                except Exception as ve:
+                    print(f"Vector DB Error: {ve}")
+
             flash('新規商品を登録しました。', 'success')
             return redirect(url_for('dvds'))
         except Exception as e:
@@ -192,6 +237,14 @@ def edit_dvd(dvd_id):
                 WHERE dvd_id = ?
             ''', (title, genre_id, release_date, stock_count, storage_location, description, dvd_id))
             conn.commit()
+            
+            # Vector DBも更新
+            if description:
+                try:
+                    vector_search.add_dvd(dvd_id, description)
+                except Exception as ve:
+                    print(f"Vector DB Error: {ve}")
+
             flash('DVD情報を更新しました。', 'success')
             return redirect(url_for('dvds'))
         except Exception as e:

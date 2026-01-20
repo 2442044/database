@@ -7,12 +7,22 @@
 
 <div class="card mb-4 bg-light shadow-sm border-0">
     <div class="card-body">
-        <form action="{{ url_for('dvds') }}" method="get" class="row g-3 align-items-end">
+        <form action="{{ url_for('dvds') }}" method="get" class="row g-3 align-items-start">
             <div class="col-md-5">
-                <label for="query" class="form-label">タイトル検索</label>
-                <div class="input-group">
+                <label for="query" class="form-label">検索キーワード</label>
+                <div class="input-group mb-2">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" id="query" name="query" value="{{ query }}" class="form-control" placeholder="キーワードを入力...">
+                    <input type="text" id="query" name="query" value="{{ query }}" class="form-control" placeholder="タイトルや「泣ける映画」など...">
+                </div>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="search_type" id="search_keyword" value="keyword" {% if search_type == 'keyword' %}checked{% endif %}>
+                        <label class="form-check-label" for="search_keyword">タイトル検索</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="search_type" id="search_semantic" value="semantic" {% if search_type == 'semantic' %}checked{% endif %}>
+                        <label class="form-check-label" for="search_semantic">AI (曖昧) 検索</label>
+                    </div>
                 </div>
             </div>
             <div class="col-md-3">
