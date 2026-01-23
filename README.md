@@ -166,35 +166,35 @@ Pythonがインストールされている場合、以下の手順で起動可�
 ```mermaid
 graph TD
     subgraph Client_Layer [クライアント層]
-        Browser[Web Browser]
+        Browser[Webブラウザ]
     end
 
     subgraph Proxy_Layer [プロキシ層]
-        Nginx[Nginx Container<br/>Port 80]
+        Nginx[Nginxコンテナ<br/>(ポート 80)]
     end
 
     subgraph App_Layer [アプリケーション層]
-        Flask[Flask App Container<br/>Port 8000]
-        ST[Sentence Transformers<br/>paraphrase-multilingual-MiniLM-L12-v2]
+        Flask[Flaskアプリコンテナ<br/>(ポート 8000)]
+        ST[Sentence Transformers<br/>(多言語埋め込みモデル)]
     end
 
     subgraph Data_Layer [データ層]
-        RDB[(dvd_rental.db<br/>SQLite)]
-        VectorDB[(dvd_vector.db<br/>SQLite + numpy)]
+        RDB[(dvd_rental.db<br/>(SQLite / RDB))]
+        VectorDB[(dvd_vector.db<br/>(SQLite + numpy / ベクトルDB))]
     end
 
     %% リクエストの流れ
-    Browser -->|HTTP Request| Nginx
-    Nginx -->|Proxy Pass| Flask
+    Browser -->|HTTPリクエスト| Nginx
+    Nginx -->|プロキシ転送| Flask
     
     %% アプリケーションの動作
-    Flask -->|SQL Query| RDB
-    Flask -->|Vector Search| VectorDB
-    Flask <-->|Embedding| ST
+    Flask -->|SQLクエリ| RDB
+    Flask -->|ベクトル検索| VectorDB
+    Flask <-->|テキスト埋め込み生成| ST
     
     %% データ同期
-    RDB -.->|Data Sync| ST
-    ST -.->|Embeddings| VectorDB
+    RDB -.->|初期化・更新時のデータ抽出| ST
+    ST -.->|ベクトルデータ保存| VectorDB
 
     %% 注釈
     classDef container fill:#f9f,stroke:#333,stroke-width:2px;
