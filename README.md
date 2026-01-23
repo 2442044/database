@@ -157,6 +157,52 @@ Pythonがインストールされている場合、以下の手順で起動可�
 
 ---
 
+## システム構成図
+
+本アプリケーションは、Dockerコンテナ上で動作するNginxリバースプロキシとFlaskバックエンド、および2つのSQLiteデータベースで構成されています。
+
+### アーキテクチャ図
+
+```mermaid
+graph TD
+    subgraph Client_Layer [クライアント層]
+        Browser[Web Browser]
+    end
+
+    subgraph Proxy_Layer [プロキシ層]
+        Nginx[Nginx Container<br/>Port 80]
+    end
+
+    subgraph App_Layer [アプリケーション層]
+        Flask[Flask App Container<br/>Port 8000]
+        ST[Sentence Transformers<br/>paraphrase-multilingual-MiniLM-L12-v2]
+    end
+
+    subgraph Data_Layer [データ層]
+        RDB[(dvd_rental.db<br/>SQLite)]
+        VectorDB[(dvd_vector.db<br/>SQLite + numpy)]
+    end
+
+    %% リクエストの流れ
+    Browser -->|HTTP Request| Nginx
+    Nginx -->|Proxy Pass| Flask
+    
+    %% アプリケーションの動作
+    Flask -->|SQL Query| RDB
+    Flask -->|Vector Search| VectorDB
+    Flask <-->|Embedding| ST
+    
+    %% データ同期
+    RDB -.->|Data Sync| ST
+    ST -.->|Embeddings| VectorDB
+
+    %% 注釈
+    classDef container fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef database fill:#69f,stroke:#333,stroke-width:2px;
+    class Nginx,Flask container;
+    class RDB,VectorDB database;
+```
+
 ## ベクトル検索システムの設計
 
 本システムでは、RDB (`dvd_rental.db`) とは独立した SQLite データベース (`dvd_vector.db`) を使用してベクトルデータを管理しています。
