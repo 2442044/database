@@ -170,17 +170,17 @@ graph TD
     end
 
     subgraph Proxy_Layer [プロキシ層]
-        Nginx[Nginxコンテナ<br/>(ポート 80)]
+        Nginx["Nginxコンテナ<br/>(ポート 80)"]
     end
 
     subgraph App_Layer [アプリケーション層]
-        Flask[Flaskアプリコンテナ<br/>(ポート 8000)]
-        ST[Sentence Transformers<br/>(多言語埋め込みモデル)]
+        Flask["Flaskアプリコンテナ<br/>(ポート 8000)"]
+        ST["Sentence Transformers<br/>(多言語埋め込みモデル)"]
     end
 
     subgraph Data_Layer [データ層]
-        RDB[(dvd_rental.db<br/>(SQLite / RDB))]
-        VectorDB[(dvd_vector.db<br/>(SQLite + numpy / ベクトルDB))]
+        RDB[("dvd_rental.db<br/>(SQLite / RDB)")]
+        VectorDB[("dvd_vector.db<br/>(SQLite + numpy / ベクトルDB)")]
     end
 
     %% リクエストの流れ
