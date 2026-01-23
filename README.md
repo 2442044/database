@@ -274,7 +274,7 @@ erDiagram
 
 https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
-AI検索デモ動画
+AI検索機能デモ動画
 
 https://github.com/user-attachments/assets/d1e54f4c-a9b0-4669-b681-56f09bde1d37
 
