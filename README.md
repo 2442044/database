@@ -274,6 +274,12 @@ erDiagram
 
 https://github.com/user-attachments/assets/f74a48bd-25ad-4134-8695-52543887a315
 
+AI検索デモ動画
+
+
+https://github.com/user-attachments/assets/1093f7aa-4d4d-4680-9219-99de4b383ac1
+
+
 ---
 
 ## データベース講義内容の適用解説
